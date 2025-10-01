@@ -1,3 +1,6 @@
+using System.Collections;
+using System.Collections.Generic;
+using System.Timers;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -22,6 +25,8 @@ public class PlayerController : MonoBehaviour
     float xRotation = 0f;
     bool isGrounded;
     public bool isVisible = false;
+    public float timeVisible = 5f;
+    public float timeToInvisible = 0f;
 
     public GameObject bulletPrefab;
 
@@ -75,11 +80,9 @@ public class PlayerController : MonoBehaviour
     {
         HandleLook();
         CheckGrounded();
-
-        if (isVisible) meshRenderer.enabled = true;
-        else meshRenderer.enabled = false;
+        VisibilityHandler();
     }
-
+    
     private void FixedUpdate()
     {
         HandleMovement();
@@ -87,7 +90,7 @@ public class PlayerController : MonoBehaviour
 
     void HandleMovement()
     {
-        // Calcular direcci�n de movimiento
+        // Calcular dirección de movimiento
         Vector3 moveDirection = transform.right * moveInput.x + transform.forward * moveInput.y;
 
         // Aplicar movimiento al Rigidbody
@@ -116,16 +119,27 @@ public class PlayerController : MonoBehaviour
         float mouseX = lookInput.x * mouseSensitivity * Time.deltaTime;
         float mouseY = lookInput.y * mouseSensitivity * Time.deltaTime;
 
-        // Rotaci�n vertical (arriba/abajo)
+        // Rotación vertical (arriba/abajo)
         xRotation -= mouseY;
         xRotation = Mathf.Clamp(xRotation, -maxLookAngle, maxLookAngle);
 
         playerCamera.transform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
 
-        // Rotaci�n horizontal (izquierda/derecha)
+        // Rotación horizontal (izquierda/derecha)
         transform.Rotate(Vector3.up * mouseX);
     }
-
+    // Un timer que siempre que esté por encima de 0 muestra el mesh renderer y reduce el timer el cual es adaptable
+    // desde la variable timeVisible, pues cada vez que se dispare se asignará el valor de esa variable a
+    // timeToInvisible, al hacer esto, siempre se reinicia el timer cada vez que disparo, sino, el tiempo se volvía
+    // irregular el tiempo visible, a revisar si es más optimizable
+    void VisibilityHandler()
+    {
+        if (isVisible) meshRenderer.enabled = true;
+        else meshRenderer.enabled = false;
+        isVisible = timeToInvisible > 0.0f;
+        if (timeToInvisible > 0.0f) timeToInvisible -= Time.deltaTime;
+    }
+    
     void OnMove(InputAction.CallbackContext context)
     {
         moveInput = context.ReadValue<Vector2>();
@@ -145,9 +159,11 @@ public class PlayerController : MonoBehaviour
         if (Physics.Raycast(playerCamera.transform.position, playerCamera.transform.forward, out hit, 100f))
         {
             isVisible = true;
-            Debug.Log("Objeto golpeado: " + hit.transform.name + " en posici�n: " + hit.point);
+            Debug.Log("Objeto golpeado: " + hit.transform.name + " en posici�n: " + hit.point);
             //Instantiate(bulletPrefab, hit.point, Quaternion.LookRotation(hit.normal));
         }
+
+        timeToInvisible = timeVisible;
     }
 
     // Dibujar gizmo para visualizar el ground check
@@ -159,4 +175,12 @@ public class PlayerController : MonoBehaviour
             Gizmos.DrawWireSphere(groundCheck.position, groundCheckDistance);
         }
     }
+
+    // Intenté hacerlo con la corutina pero me daba mejor resultado usar deltaTime como explico arriba
+    IEnumerator TurnInvisible()
+    {
+        yield return new WaitForSeconds(timeVisible);
+        isVisible = false;
+    }
+    
 }

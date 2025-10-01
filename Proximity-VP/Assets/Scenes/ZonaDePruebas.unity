@@ -283,6 +283,9 @@ MonoBehaviour:
   groundCheck: {fileID: 1294541965}
   moveInput: {x: 0, y: 0}
   lookInput: {x: 0, y: 0}
+  isVisible: 0
+  timeVisible: 3
+  timeToInvisible: 0
   bulletPrefab: {fileID: 994797016069950853, guid: f626613845bde41428a7f3237b44dcb9, type: 3}
 --- !u!1 &330585543
 GameObject:
