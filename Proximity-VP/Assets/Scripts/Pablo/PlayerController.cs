@@ -155,12 +155,12 @@ public class PlayerController : MonoBehaviour
         Debug.Log("Disparando!");
 
         // Sistema de disparo con raycast
+        Instantiate(bulletPrefab, playerCamera.transform.position, playerCamera.transform.rotation);
         RaycastHit hit;
         if (Physics.Raycast(playerCamera.transform.position, playerCamera.transform.forward, out hit, 100f))
         {
             isVisible = true;
-            Debug.Log("Objeto golpeado: " + hit.transform.name + " en posici�n: " + hit.point);
-            //Instantiate(bulletPrefab, hit.point, Quaternion.LookRotation(hit.normal));
+            Debug.Log("Objeto golpeado: " + hit.transform.name + " en posición: " + hit.point);
         }
 
         timeToInvisible = timeVisible;

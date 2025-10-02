@@ -1,12 +1,27 @@
+using System;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class BulletScript : MonoBehaviour
 {
     public float speed;
     
-    // Update is called once per frame
+    Rigidbody rb;
+
+    private void Start()
+    {
+        rb = GetComponent<Rigidbody>();
+        Destroy(gameObject, 3);
+    }
+
     void FixedUpdate()
     {
-        transform.Translate(Vector3.forward * speed * Time.deltaTime, Space.World);
+        rb.MovePosition(rb.position + transform.forward * speed * Time.fixedDeltaTime);
+        rb = GetComponent<Rigidbody>();
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (!other.gameObject.CompareTag("Player")) Destroy(gameObject);
     }
 }
