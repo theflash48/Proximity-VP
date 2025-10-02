@@ -134,7 +134,7 @@ GameObject:
   - component: {fileID: 45203146}
   - component: {fileID: 45203151}
   m_Layer: 0
-  m_Name: PLAYER
+  m_Name: Player
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -286,7 +286,7 @@ MonoBehaviour:
   isVisible: 0
   timeVisible: 3
   timeToInvisible: 0
-  bulletPrefab: {fileID: 994797016069950853, guid: f626613845bde41428a7f3237b44dcb9, type: 3}
+  bulletPrefab: {fileID: 6185866310984094621, guid: f626613845bde41428a7f3237b44dcb9, type: 3}
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0
