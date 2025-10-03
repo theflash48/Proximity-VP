@@ -15,8 +15,7 @@ public class PlayerController_PlayerInput : MonoBehaviour
 
     Rigidbody rb;
     MeshRenderer meshRenderer;
-    //Incorporar PlayerInput
-    InputSystem_Actions inputActions;
+    PlayerInput playerInput;
 
     public Camera playerCamera;
     public Transform groundCheck;
@@ -24,6 +23,7 @@ public class PlayerController_PlayerInput : MonoBehaviour
     public Vector2 moveInput;
     public Vector2 lookInput;
     float xRotation = 0f;
+    float yRotation = 0f;
     bool isGrounded;
     public bool isVisible = false;
     public float timeVisible = 5f;
@@ -35,46 +35,45 @@ public class PlayerController_PlayerInput : MonoBehaviour
     {
         //Rigidbody
         rb = GetComponent<Rigidbody>();
+        rb.freezeRotation = true; //Fisicas no afectan la rotacion del player
 
         //MeshRenderer
         meshRenderer = GetComponent<MeshRenderer>();
         meshRenderer.enabled = false;
 
         //InputSystem
-        inputActions = new InputSystem_Actions();
+        playerInput = GetComponent<PlayerInput>();
 
         //Cursor
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
     }
 
-    void OnEnable()
+    //Cambiamos el OnEnable() y OnDisable() por funciones llamadas por PlayerInput por eventos
+    public void OnMove(InputValue value)
     {
-        // Habilitar el Action Map del Player
-        inputActions.Player.Enable();
-
-        // Conectar las acciones directamente
-        inputActions.Player.Move.performed += OnMove;
-        inputActions.Player.Move.canceled += OnMove;
-
-        inputActions.Player.Look.performed += OnLook;
-        inputActions.Player.Look.canceled += OnLook;
-
-        inputActions.Player.Shoot.performed += OnShoot;
+        moveInput = value.Get<Vector2>();
     }
-    void OnDisable()
+
+    public void OnLook(InputValue value)
     {
-        // Desconectar las acciones
-        inputActions.Player.Move.performed -= OnMove;
-        inputActions.Player.Move.canceled -= OnMove;
+        lookInput = value.Get<Vector2>();
+    }
 
-        inputActions.Player.Look.performed -= OnLook;
-        inputActions.Player.Look.canceled -= OnLook;
+    public void OnShoot(InputValue value)
+    {
+        Debug.Log("Disparando!");
 
-        inputActions.Player.Shoot.performed -= OnShoot;
+        // Sistema de disparo con raycast
+        Instantiate(bulletPrefab, playerCamera.transform.position, playerCamera.transform.rotation);
+        RaycastHit hit;
+        if (Physics.Raycast(playerCamera.transform.position, playerCamera.transform.forward, out hit, 100f))
+        {
+            isVisible = true;
+            Debug.Log("Objeto golpeado: " + hit.transform.name + " en posición: " + hit.point);
+        }
 
-        // Deshabilitar el Action Map
-        inputActions.Player.Disable();
+        timeToInvisible = timeVisible;
     }
 
     private void Update()
@@ -124,10 +123,13 @@ public class PlayerController_PlayerInput : MonoBehaviour
         xRotation -= mouseY;
         xRotation = Mathf.Clamp(xRotation, -maxLookAngle, maxLookAngle);
 
-        playerCamera.transform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
+        //Rotacion horizontal (izquierda(derecha)
+        yRotation += mouseX;
 
-        // Rotación horizontal (izquierda/derecha)
-        transform.Rotate(Vector3.up * mouseX);
+        //Rotacion en X
+        playerCamera.transform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
+        //Rotación horizontal (izquierda/derecha) y mas control en la rotacion en Y
+        transform.rotation = Quaternion.Euler(0f, yRotation, 0f);
     }
     // Un timer que siempre que esté por encima de 0 muestra el mesh renderer y reduce el timer el cual es adaptable
     // desde la variable timeVisible, pues cada vez que se dispare se asignará el valor de esa variable a
@@ -139,32 +141,6 @@ public class PlayerController_PlayerInput : MonoBehaviour
         else meshRenderer.enabled = false;
         isVisible = timeToInvisible > 0.0f;
         if (timeToInvisible > 0.0f) timeToInvisible -= Time.deltaTime;
-    }
-    
-    void OnMove(InputAction.CallbackContext context)
-    {
-        moveInput = context.ReadValue<Vector2>();
-    }
-
-    void OnLook(InputAction.CallbackContext context)
-    {
-        lookInput = context.ReadValue<Vector2>();
-    }
-
-    void OnShoot(InputAction.CallbackContext context)
-    {
-        Debug.Log("Disparando!");
-
-        // Sistema de disparo con raycast
-        Instantiate(bulletPrefab, playerCamera.transform.position, playerCamera.transform.rotation);
-        RaycastHit hit;
-        if (Physics.Raycast(playerCamera.transform.position, playerCamera.transform.forward, out hit, 100f))
-        {
-            isVisible = true;
-            Debug.Log("Objeto golpeado: " + hit.transform.name + " en posición: " + hit.point);
-        }
-
-        timeToInvisible = timeVisible;
     }
 
     // Dibujar gizmo para visualizar el ground check
