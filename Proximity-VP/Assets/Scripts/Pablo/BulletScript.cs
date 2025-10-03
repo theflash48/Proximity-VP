@@ -22,6 +22,7 @@ public class BulletScript : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
+        //Actualmente esta para que sea cualquier objeto que no sea el player
         if (!other.gameObject.CompareTag("Player")) Destroy(gameObject);
     }
 }

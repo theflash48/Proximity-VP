@@ -4,7 +4,7 @@ using System.Timers;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class PlayerController : MonoBehaviour
+public class PlayerController_PlayerInput : MonoBehaviour
 {
     [Header("Movement Settings")]
     public float moveSpeed;
@@ -15,6 +15,7 @@ public class PlayerController : MonoBehaviour
 
     Rigidbody rb;
     MeshRenderer meshRenderer;
+    //Incorporar PlayerInput
     InputSystem_Actions inputActions;
 
     public Camera playerCamera;
