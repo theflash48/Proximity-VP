@@ -19,6 +19,8 @@ public class PlayerController_PlayerInput : MonoBehaviour
 
     public Camera playerCamera;
     public Transform groundCheck;
+    public GameObject firingPoint;
+    public Shoot shootScript;
 
     public Vector2 moveInput;
     public Vector2 lookInput;
@@ -47,6 +49,9 @@ public class PlayerController_PlayerInput : MonoBehaviour
         //Cursor
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+        
+        //Shoot
+        shootScript = GetComponent<Shoot>();
     }
 
     //Cambiamos el OnEnable() y OnDisable() por funciones llamadas por PlayerInput por eventos
@@ -65,9 +70,9 @@ public class PlayerController_PlayerInput : MonoBehaviour
         Debug.Log("Disparando!");
 
         // Sistema de disparo con raycast
-        Instantiate(bulletPrefab, playerCamera.transform.position, playerCamera.transform.rotation);
+        shootScript.ShootBullet();
         RaycastHit hit;
-        if (Physics.Raycast(playerCamera.transform.position, playerCamera.transform.forward, out hit, 100f))
+        if (Physics.Raycast(firingPoint.transform.position, firingPoint.transform.forward, out hit, 100f))
         {
             isVisible = true;
             Debug.Log("Objeto golpeado: " + hit.transform.name + " en posición: " + hit.point);

@@ -19,6 +19,7 @@ public class PlayerController : MonoBehaviour
 
     public Camera playerCamera;
     public Transform groundCheck;
+    public Shoot shootScript;
 
     public Vector2 moveInput;
     public Vector2 lookInput;
@@ -153,9 +154,9 @@ public class PlayerController : MonoBehaviour
     void OnShoot(InputAction.CallbackContext context)
     {
         Debug.Log("Disparando!");
-
+        
         // Sistema de disparo con raycast
-        GameObject bullet = Instantiate(bulletPrefab, playerCamera.transform.position, playerCamera.transform.rotation);
+        /* GameObject bullet = Instantiate(bulletPrefab, playerCamera.transform.position, playerCamera.transform.rotation);
         
         // Asignar el dueño de la bala para evitar que temates a ti mismo
         BulletScript bulletScript = bullet.GetComponent<BulletScript>();
@@ -163,7 +164,7 @@ public class PlayerController : MonoBehaviour
         {
             bulletScript.owner = gameObject;
         }
-        
+        */
         RaycastHit hit;
         if (Physics.Raycast(playerCamera.transform.position, playerCamera.transform.forward, out hit, 100f))
         {

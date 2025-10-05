@@ -4,7 +4,9 @@ using UnityEngine;
 
 public class BulletScript : MonoBehaviour
 {
-    public float speed;
+    public float currentSpeed = 0;
+    public float maxSpeed = 0 ;
+    public GameObject spawnInicial;
     
     [HideInInspector]
     public GameObject owner; // El jugador que disparo esta bala
@@ -13,13 +15,13 @@ public class BulletScript : MonoBehaviour
     
     private void Start()
     {
+        spawnInicial = GameObject.Find("SpawnInicial");
         rb = GetComponent<Rigidbody>();
-        Destroy(gameObject, 3);
     }
     
     void FixedUpdate()
     {
-        rb.MovePosition(rb.position + transform.forward * speed * Time.fixedDeltaTime);
+        rb.MovePosition(rb.position + transform.forward * currentSpeed * Time.fixedDeltaTime);
     }
     
     private void OnTriggerEnter(Collider other)
@@ -33,12 +35,12 @@ public class BulletScript : MonoBehaviour
         // Destruir bala al chocar con cualquier cosa que no sea el player
         if (!other.gameObject.CompareTag("Player"))
         {
-            Destroy(gameObject);
+            transform.position = spawnInicial.transform.position;
         }
         else
         {
             // Si choca con otro jugador, tambien se destruye
-            Destroy(gameObject);
+            transform.position = spawnInicial.transform.position;
         }
     }
 }
