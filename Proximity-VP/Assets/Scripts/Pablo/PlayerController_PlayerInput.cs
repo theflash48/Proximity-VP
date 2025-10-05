@@ -12,6 +12,7 @@ public class PlayerController_PlayerInput : MonoBehaviour
     public float maxLookAngle;
     public float groundCheckDistance = 0.1f;
     public LayerMask groundLayer = 1;
+    public int score = 0;
 
     Rigidbody rb;
     MeshRenderer meshRenderer;
@@ -71,12 +72,7 @@ public class PlayerController_PlayerInput : MonoBehaviour
 
         // Sistema de disparo con raycast
         shootScript.ShootBullet();
-        RaycastHit hit;
-        if (Physics.Raycast(firingPoint.transform.position, firingPoint.transform.forward, out hit, 100f))
-        {
-            isVisible = true;
-            Debug.Log("Objeto golpeado: " + hit.transform.name + " en posición: " + hit.point);
-        }
+        isVisible = true;
 
         timeToInvisible = timeVisible;
     }

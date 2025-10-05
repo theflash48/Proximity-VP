@@ -11,12 +11,14 @@ public class BulletScript : MonoBehaviour
     [HideInInspector]
     public GameObject owner; // El jugador que disparo esta bala
     
+    
     Rigidbody rb;
     
     private void Start()
     {
         spawnInicial = GameObject.Find("SpawnInicial");
         rb = GetComponent<Rigidbody>();
+        currentSpeed = maxSpeed;
     }
     
     void FixedUpdate()
@@ -33,7 +35,7 @@ public class BulletScript : MonoBehaviour
         }
         
         // Destruir bala al chocar con cualquier cosa que no sea el player
-        if (!other.gameObject.CompareTag("Player"))
+        if (other.gameObject.CompareTag("Player"))
         {
             transform.position = spawnInicial.transform.position;
         }

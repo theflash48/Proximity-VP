@@ -149,4 +149,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7d39ae4d4e6842941b20ba1fba46d151, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 200
+  currentSpeed: 0
+  maxSpeed: 200
+  spawnInicial: {fileID: 0}
+  owner: {fileID: 0}

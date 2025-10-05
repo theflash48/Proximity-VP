@@ -39,7 +39,8 @@ public class PlayerHealth : MonoBehaviour
         }
     }
 
-    void OnTriggerEnter(Collider other)
+    void OnTriggerEnter(Collider other) // A revisar por diseño, o matamos por raycast o matamos por bala,
+                                        // pero no las 2 porque está buggenado el sistema de puntuacion
     {
         // Si es golpeado por una bala
         if (other.CompareTag("Bullet") && !isDead)
