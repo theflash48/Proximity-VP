@@ -7,7 +7,7 @@ public class BulletScript : MonoBehaviour
     public float speed;
     
     [HideInInspector]
-    public GameObject owner; // El jugador que disparó esta bala
+    public GameObject owner; // El jugador que disparo esta bala
     
     Rigidbody rb;
     
@@ -24,20 +24,20 @@ public class BulletScript : MonoBehaviour
     
     private void OnTriggerEnter(Collider other)
     {
-        // No destruir si choca con el dueño de la bala
+        // No destruir si choca con el owner de la bala
         if (other.gameObject == owner)
         {
             return;
         }
         
-        // Destruir bala al chocar con cualquier cosa que no sea el player que la disparó
+        // Destruir bala al chocar con cualquier cosa que no sea el player
         if (!other.gameObject.CompareTag("Player"))
         {
             Destroy(gameObject);
         }
         else
         {
-            // Si choca con otro jugador, también se destruye
+            // Si choca con otro jugador, tambien se destruye
             Destroy(gameObject);
         }
     }

@@ -4,25 +4,15 @@ using UnityEngine.UI;
 
 public class PlayerHealth : MonoBehaviour
 {
-    [Header("Health Settings")]
     public int maxLives = 2;
     public int currentLives;
-    
-    [Header("Respawn Settings")]
     public float respawnDelay = 3f;
-    
-    [Header("References")]
     private PlayerController playerController;
     private Rigidbody rb;
     private Collider playerCollider;
-    
-    [Header("Death Screen")]
-    public Image fadeImage; // Asigna una UI Image negra que cubra toda la cámara del jugador
+    public Image fadeImage; // CARTMAN
     public float fadeDuration = 1f;
-    
-    [Header("Visual Feedback")]
     public GameObject deathEffect; // Efecto de partículas al morir (opcional)
-    
     private bool isDead = false;
     private GameObject shooter; // Referencia a quien disparó la bala
 
@@ -76,7 +66,7 @@ public class PlayerHealth : MonoBehaviour
         }
         else
         {
-            // Feedback visual de daño (opcional)
+            // Feedback visual de hit (opcional)
             StartCoroutine(DamageFlash());
         }
     }
@@ -86,13 +76,11 @@ public class PlayerHealth : MonoBehaviour
         isDead = true;
         Debug.Log(gameObject.name + " ha muerto!");
 
-        // Efecto de muerte
         if (deathEffect != null)
         {
             Instantiate(deathEffect, transform.position, Quaternion.identity);
         }
 
-        // Deshabilitar controles y físicas
         if (playerController != null)
         {
             playerController.enabled = false;
@@ -104,26 +92,22 @@ public class PlayerHealth : MonoBehaviour
             rb.angularVelocity = Vector3.zero;
         }
 
-        // Ocultar el jugador
         MeshRenderer meshRenderer = GetComponent<MeshRenderer>();
         if (meshRenderer != null)
         {
             meshRenderer.enabled = false;
         }
 
-        // Deshabilitar colisiones
         if (playerCollider != null)
         {
             playerCollider.enabled = false;
         }
-
-        // Iniciar fade a negro y respawn
         StartCoroutine(DeathSequence());
     }
 
     IEnumerator DeathSequence()
     {
-        // Fade a negro
+        // Fade a CARTMAN
         if (fadeImage != null)
         {
             fadeImage.gameObject.SetActive(true);
@@ -142,13 +126,11 @@ public class PlayerHealth : MonoBehaviour
             fadeImage.color = c;
         }
 
-        // Esperar un momento con pantalla negra
+        // Esperar un momento con CARTMna
         yield return new WaitForSeconds(respawnDelay - fadeDuration);
 
         // Respawnear
         Respawn();
-
-        // Fade desde negro a transparente
         if (fadeImage != null)
         {
             float elapsedTime = 0f;
@@ -174,7 +156,7 @@ public class PlayerHealth : MonoBehaviour
         currentLives = maxLives;
         isDead = false;
 
-        // Obtener spawn point más lejano
+        // Obtener spawn point mas lejano :3
         Transform spawnPoint = null;
         if (SpawnManager.Instance != null)
         {
@@ -187,21 +169,15 @@ public class PlayerHealth : MonoBehaviour
             transform.position = spawnPoint.position;
             transform.rotation = spawnPoint.rotation;
         }
-
-        // Resetear físicas
         if (rb != null)
         {
             rb.linearVelocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
         }
-
-        // Reactivar controles
         if (playerController != null)
         {
             playerController.enabled = true;
         }
-
-        // Reactivar colisiones
         if (playerCollider != null)
         {
             playerCollider.enabled = true;
@@ -210,7 +186,6 @@ public class PlayerHealth : MonoBehaviour
         Debug.Log(gameObject.name + " ha respawneado!");
     }
 
-    // Efecto visual de daño (parpadeo)
     IEnumerator DamageFlash()
     {
         MeshRenderer meshRenderer = GetComponent<MeshRenderer>();
@@ -228,7 +203,6 @@ public class PlayerHealth : MonoBehaviour
 
     void OnDestroy()
     {
-        // Desregistrar jugador del SpawnManager
         if (SpawnManager.Instance != null)
         {
             SpawnManager.Instance.UnregisterPlayer(gameObject);
