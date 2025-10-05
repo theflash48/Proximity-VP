@@ -6,23 +6,39 @@ public class BulletScript : MonoBehaviour
 {
     public float speed;
     
+    [HideInInspector]
+    public GameObject owner; // El jugador que disparó esta bala
+    
     Rigidbody rb;
-
+    
     private void Start()
     {
         rb = GetComponent<Rigidbody>();
         Destroy(gameObject, 3);
     }
-
+    
     void FixedUpdate()
     {
         rb.MovePosition(rb.position + transform.forward * speed * Time.fixedDeltaTime);
-        rb = GetComponent<Rigidbody>();
     }
-
+    
     private void OnTriggerEnter(Collider other)
     {
-        //Actualmente esta para que sea cualquier objeto que no sea el player
-        if (!other.gameObject.CompareTag("Player")) Destroy(gameObject);
+        // No destruir si choca con el dueño de la bala
+        if (other.gameObject == owner)
+        {
+            return;
+        }
+        
+        // Destruir bala al chocar con cualquier cosa que no sea el player que la disparó
+        if (!other.gameObject.CompareTag("Player"))
+        {
+            Destroy(gameObject);
+        }
+        else
+        {
+            // Si choca con otro jugador, también se destruye
+            Destroy(gameObject);
+        }
     }
 }

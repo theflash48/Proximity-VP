@@ -155,7 +155,15 @@ public class PlayerController : MonoBehaviour
         Debug.Log("Disparando!");
 
         // Sistema de disparo con raycast
-        Instantiate(bulletPrefab, playerCamera.transform.position, playerCamera.transform.rotation);
+        GameObject bullet = Instantiate(bulletPrefab, playerCamera.transform.position, playerCamera.transform.rotation);
+        
+        // Asignar el dueño de la bala para evitar que temates a ti mismo
+        BulletScript bulletScript = bullet.GetComponent<BulletScript>();
+        if (bulletScript != null)
+        {
+            bulletScript.owner = gameObject;
+        }
+        
         RaycastHit hit;
         if (Physics.Raycast(playerCamera.transform.position, playerCamera.transform.forward, out hit, 100f))
         {
