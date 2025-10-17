@@ -7,8 +7,8 @@ public class PlayerSpawnScript : MonoBehaviour
     public Transform[] SpawnPoints;
 
     // Guardamos el PlayerController por índice de jugador
-    List<PlayerController_PlayerInput> players = new List<PlayerController_PlayerInput>();
-    List<PlayerController_PlayerInput> playersScore =  new List<PlayerController_PlayerInput>();
+    List<PlayerController> players = new List<PlayerController>();
+    List<PlayerController> playersScore =  new List<PlayerController>();
 
     public void OnPlayerJoined(PlayerInput playerInput)
     {
@@ -22,7 +22,7 @@ public class PlayerSpawnScript : MonoBehaviour
         playerInput.transform.SetPositionAndRotation(sp.position, sp.rotation);
 
         // Guarda referencia a su PlayerController
-        players[idx] = playerInput.GetComponent<PlayerController_PlayerInput>();
+        players[idx] = playerInput.GetComponent<PlayerController>();
     }
 
     // (Opcional) Limpieza si un jugador se va
