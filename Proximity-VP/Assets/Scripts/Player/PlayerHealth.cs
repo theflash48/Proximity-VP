@@ -1,29 +1,45 @@
+using Unity.Netcode;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class PlayerHealth : MonoBehaviour
+public class PlayerHealth : NetworkBehaviour
 {
     public int maxLives = 2;
-    public int currentLives;
+    
+private NetworkVariable<int> currentLives = new NetworkVariable<int>(
+    2,
+    NetworkVariableReadPermission.Everyone,
+    NetworkVariableWritePermission.Server
+);
+
+// Método público para obtener las vidas actuales
+public int GetCurrentLives()
+{
+    return currentLives.Value;
+}
+    
     public float respawnDelay = 3f;
     private PlayerController playerController;
     private Rigidbody rb;
     private Collider playerCollider;
-    public Image fadeImage; // CARTMAN
+    public Image fadeImage;
     public float fadeDuration = 1f;
-    public GameObject deathEffect; // Efecto de partículas al morir (opcional)
+    public GameObject deathEffect;
     private bool isDead = false;
-    private GameObject shooter; // Referencia a quien disparó la bala
 
     void Start()
     {
-        currentLives = maxLives;
+        // Solo el servidor inicializa las vidas
+        if (IsServer)
+        {
+            currentLives.Value = maxLives;
+        }
+        
         playerController = GetComponent<PlayerController>();
         rb = GetComponent<Rigidbody>();
         playerCollider = GetComponent<Collider>();
         
-        // Asegurarse de que la pantalla empiece transparente
         if (fadeImage != null)
         {
             Color c = fadeImage.color;
@@ -32,16 +48,16 @@ public class PlayerHealth : MonoBehaviour
             fadeImage.gameObject.SetActive(false);
         }
         
-        // Registrar jugador en el SpawnManager
         if (SpawnManager.Instance != null)
         {
             SpawnManager.Instance.RegisterPlayer(gameObject);
         }
     }
 
-    void OnTriggerEnter(Collider other) // A revisar por diseño, o matamos por raycast o matamos por bala,
-                                        // pero no las 2 porque está buggenado el sistema de puntuacion
+    void OnTriggerEnter(Collider other)
     {
+        if (!IsServer) return;
+
         // Si es golpeado por una bala
         if (other.CompareTag("Bullet") && !isDead)
         {
@@ -57,32 +73,44 @@ public class PlayerHealth : MonoBehaviour
     public void TakeDamage()
     {
         if (isDead) return;
+        
+        // Solo el servidor puede aplicar daño
+        if (!IsServer) return;
 
-        currentLives--;
-        Debug.Log(gameObject.name + " vidas restantes: " + currentLives);
+        currentLives.Value--;
+        Debug.Log(gameObject.name + " vidas restantes: " + currentLives.Value);
 
-        if (currentLives <= 0)
+        if (currentLives.Value <= 0)
         {
             Die();
         }
         else
         {
-            // Feedback visual de hit (opcional)
-            StartCoroutine(DamageFlash());
+            DamageFlashClientRpc();
         }
     }
 
     void Die()
     {
+        // Solo el servidor ejecuta la muerte
+        if (!IsServer) return;
+
         isDead = true;
         Debug.Log(gameObject.name + " ha muerto!");
 
+        // Ejecutar efectos en todos los clientes
+        DieClientRpc();
+    }
+
+    [ClientRpc]
+    private void DieClientRpc()
+    {
         if (deathEffect != null)
         {
             Instantiate(deathEffect, transform.position, Quaternion.identity);
         }
 
-        if (playerController != null)
+        if (IsOwner && playerController != null)
         {
             playerController.enabled = false;
         }
@@ -103,7 +131,12 @@ public class PlayerHealth : MonoBehaviour
         {
             playerCollider.enabled = false;
         }
-        StartCoroutine(DeathSequence());
+
+        // Solo el dueño inicia la secuencia de CARMTNA
+        if (IsOwner)
+        {
+            StartCoroutine(DeathSequence());
+        }
     }
 
     IEnumerator DeathSequence()
@@ -127,11 +160,14 @@ public class PlayerHealth : MonoBehaviour
             fadeImage.color = c;
         }
 
-        // Esperar un momento con CARTMna
         yield return new WaitForSeconds(respawnDelay - fadeDuration);
 
-        // Respawnear
-        Respawn();
+        // El servidor maneja el respawn
+        if (IsServer)
+        {
+            Respawn();
+        }
+
         if (fadeImage != null)
         {
             float elapsedTime = 0f;
@@ -153,29 +189,48 @@ public class PlayerHealth : MonoBehaviour
 
     void Respawn()
     {
-        // Restaurar vidas
-        currentLives = maxLives;
+        // Solo el servidor puede hacer respawn
+        if (!IsServer) return;
+
+        currentLives.Value = maxLives;
         isDead = false;
 
-        // Obtener spawn point mas lejano :3
-        Transform spawnPoint = null;
-        if (SpawnManager.Instance != null)
+        // Usar el NetworkSpawnManager para respawn
+        if (NetworkSpawnManager.Instance != null)
         {
-            spawnPoint = SpawnManager.Instance.GetFarthestSpawnPoint(gameObject);
+            NetworkObject netObj = GetComponent<NetworkObject>();
+            NetworkSpawnManager.Instance.RespawnPlayer(netObj);
+        }
+        else
+        {
+            Transform spawnPoint = null;
+            if (SpawnManager.Instance != null)
+            {
+                spawnPoint = SpawnManager.Instance.GetFarthestSpawnPoint(gameObject);
+            }
+
+            if (spawnPoint != null)
+            {
+                transform.position = spawnPoint.position;
+                transform.rotation = spawnPoint.rotation;
+            }
         }
 
-        // Mover jugador al spawn point
-        if (spawnPoint != null)
-        {
-            transform.position = spawnPoint.position;
-            transform.rotation = spawnPoint.rotation;
-        }
         if (rb != null)
         {
             rb.linearVelocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
         }
-        if (playerController != null)
+
+        ReactivatePlayerClientRpc();
+
+        Debug.Log(gameObject.name + " ha respawneado!");
+    }
+
+    [ClientRpc]
+    private void ReactivatePlayerClientRpc()
+    {
+        if (playerController != null && IsOwner)
         {
             playerController.enabled = true;
         }
@@ -183,8 +238,12 @@ public class PlayerHealth : MonoBehaviour
         {
             playerCollider.enabled = true;
         }
+    }
 
-        Debug.Log(gameObject.name + " ha respawneado!");
+    [ClientRpc]
+    private void DamageFlashClientRpc()
+    {
+        StartCoroutine(DamageFlash());
     }
 
     IEnumerator DamageFlash()

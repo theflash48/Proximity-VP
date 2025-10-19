@@ -1,10 +1,11 @@
+using Unity.Netcode;
 using System.Collections;
 using System.Collections.Generic;
 using System.Timers;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class PlayerController : MonoBehaviour
+public class PlayerController : NetworkBehaviour
 {
     [Header("Movement Settings")]
     public float moveSpeed;
@@ -55,6 +56,28 @@ public class PlayerController : MonoBehaviour
         shootScript = GetComponent<Shoot>();
     }
 
+    // NUEVO: Solo el dueño puede controlar este jugador
+    public override void OnNetworkSpawn()
+    {
+        if (!IsOwner)
+        {
+            // Deshabilitar control para jugadores que no son el dueño
+            if (playerInput != null)
+            {
+                playerInput.enabled = false;
+            }
+            
+            // Deshabilitar la cámara de jugadores remotos
+            if (playerCamera != null)
+            {
+                playerCamera.enabled = false;
+                // Opcional: también desactivar el AudioListener
+                AudioListener listener = playerCamera.GetComponent<AudioListener>();
+                if (listener != null) listener.enabled = false;
+            }
+        }
+    }
+
     //Cambiamos el OnEnable() y OnDisable() por funciones llamadas por PlayerInput por eventos
     public void OnMove(InputValue value)
     {
@@ -68,6 +91,9 @@ public class PlayerController : MonoBehaviour
 
     public void OnShoot(InputValue value)
     {
+        // Solo el dueño puede disparar
+        if (!IsOwner) return;
+
         Debug.Log("Disparando!");
 
         // Sistema de disparo con raycast
@@ -79,6 +105,9 @@ public class PlayerController : MonoBehaviour
 
     private void Update()
     {
+        // Solo el dueño ejecuta la lógica local
+        if (!IsOwner) return;
+
         HandleLook();
         CheckGrounded();
         VisibilityHandler();
@@ -86,6 +115,9 @@ public class PlayerController : MonoBehaviour
     
     private void FixedUpdate()
     {
+        // Solo el dueño mueve su personaje
+        if (!IsOwner) return;
+
         HandleMovement();
     }
 
@@ -132,10 +164,7 @@ public class PlayerController : MonoBehaviour
         //Rotación horizontal (izquierda/derecha) y mas control en la rotacion en Y
         transform.rotation = Quaternion.Euler(0f, yRotation, 0f);
     }
-    // Un timer que siempre que esté por encima de 0 muestra el mesh renderer y reduce el timer el cual es adaptable
-    // desde la variable timeVisible, pues cada vez que se dispare se asignará el valor de esa variable a
-    // timeToInvisible, al hacer esto, siempre se reinicia el timer cada vez que disparo, sino, el tiempo se volvía
-    // irregular el tiempo visible, a revisar si es más optimizable
+
     void VisibilityHandler()
     {
         if (isVisible) meshRenderer.enabled = true;
@@ -144,7 +173,6 @@ public class PlayerController : MonoBehaviour
         if (timeToInvisible > 0.0f) timeToInvisible -= Time.deltaTime;
     }
 
-    // Dibujar gizmo para visualizar el ground check
     void OnDrawGizmosSelected()
     {
         if (groundCheck != null)

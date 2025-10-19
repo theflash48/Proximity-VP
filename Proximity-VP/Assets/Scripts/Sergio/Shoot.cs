@@ -3,24 +3,42 @@ using UnityEngine.EventSystems;
 
 public class Shoot : MonoBehaviour
 {
-    public GameObject spawnInicial;
+    // Ya no necesitamos spawnInicial ni instanciar la bala en Start
+    // public GameObject spawnInicial;
     public GameObject bulletPrefab;
     public GameObject firingPoint;
     private GameObject bullet;
-    private PlayerController_PlayerInput pc;
+    private PlayerController pc;
     
     public int[] arrayInts;
     
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        spawnInicial = GameObject.Find("SpawnInicial");
-        pc = gameObject.GetComponent<PlayerController_PlayerInput>();
-        bullet = Instantiate (bulletPrefab, spawnInicial.transform.position, spawnInicial.transform.rotation);
+        pc = gameObject.GetComponent<PlayerController>();
+        
+        if (bulletPrefab != null)
+        {
+            bullet = Instantiate(bulletPrefab);
+            bullet.SetActive(false); // La desactivamos hasta que se dispare
+        }
     }
 
     public void ShootBullet()
     {
+        if (firingPoint == null)
+        {
+            PlayerController playerController = GetComponent<PlayerController>();
+            if (playerController != null && playerController.firingPoint != null)
+            {
+                firingPoint = playerController.firingPoint;
+            }
+            else
+            {
+                Debug.LogWarning("FiringPoint no encontrado en Shoot!");
+                return;
+            }
+        }
+
         RaycastHit hit;
         if (Physics.Raycast(firingPoint.transform.position, firingPoint.transform.forward, out hit, 100f))
         {
@@ -28,15 +46,30 @@ public class Shoot : MonoBehaviour
             if (hit.transform.gameObject.CompareTag("Player"))
             {
                 PlayerHealth pc_hit = hit.transform.gameObject.GetComponent<PlayerHealth>();
-                if (pc_hit.currentLives <= 0)
+                
+                if (pc_hit != null && pc_hit.GetCurrentLives() <= 0)
                 {
                     pc.score++;
                 }
             }
         }
-        bullet.transform.position = firingPoint.transform.position;
-        bullet.transform.rotation = firingPoint.transform.rotation;
+        
+        if (bullet != null)
+        {
+            bullet.SetActive(true);
+            bullet.transform.position = firingPoint.transform.position;
+            bullet.transform.rotation = firingPoint.transform.rotation;
+            
+            StartCoroutine(HideBulletAfterDelay(0.1f));
+        }
     }
 
-
+    System.Collections.IEnumerator HideBulletAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        if (bullet != null)
+        {
+            bullet.SetActive(false);
+        }
+    }
 }
