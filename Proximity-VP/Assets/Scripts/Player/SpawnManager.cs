@@ -32,7 +32,6 @@ public class SpawnManager : MonoBehaviour
         }
     }
 
-    // Desregistrar jugador cuando sea necesario
     public void UnregisterPlayer(GameObject player)
     {
         if (activePlayers.Contains(player))
@@ -50,7 +49,6 @@ public class SpawnManager : MonoBehaviour
             return null;
         }
 
-        // Si no hay otros jugadores, retornar un spawn aleatorio
         List<GameObject> otherPlayers = activePlayers.Where(p => p != playerToSpawn && p != null).ToList();
         
         if (otherPlayers.Count == 0)
@@ -58,7 +56,6 @@ public class SpawnManager : MonoBehaviour
             return spawnPoints[Random.Range(0, spawnPoints.Length)];
         }
 
-        // Calcular el spawn point mas lejano
         Transform bestSpawn = spawnPoints[0];
         float maxMinDistance = 0f;
 
@@ -90,7 +87,6 @@ public class SpawnManager : MonoBehaviour
         return bestSpawn;
     }
 
-    // Visualizar spawn points en el editor
     void OnDrawGizmos()
     {
         if (spawnPoints != null)

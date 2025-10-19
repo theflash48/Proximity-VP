@@ -6,7 +6,6 @@ public class PlayerSpawnScript : MonoBehaviour
 {
     public Transform[] SpawnPoints;
 
-    // Guardamos el PlayerController por índice de jugador
     List<PlayerController> players = new List<PlayerController>();
     List<PlayerController> playersScore =  new List<PlayerController>();
 
@@ -14,10 +13,8 @@ public class PlayerSpawnScript : MonoBehaviour
     {
         int idx = playerInput.playerIndex;
 
-        // Asegura capacidad de la lista
         while (players.Count <= idx) players.Add(null);
 
-        // Coloca al jugador en su punto de spawn (cíclico si hay más jugadores que spawn points)
         Transform sp = SpawnPoints[idx % SpawnPoints.Length];
         playerInput.transform.SetPositionAndRotation(sp.position, sp.rotation);
 
@@ -25,14 +22,12 @@ public class PlayerSpawnScript : MonoBehaviour
         players[idx] = playerInput.GetComponent<PlayerController>();
     }
 
-    // (Opcional) Limpieza si un jugador se va
     public void OnPlayerLeft(PlayerInput playerInput)
     {
         int idx = playerInput.playerIndex;
         if (idx >= 0 && idx < players.Count) players[idx] = null;
     }
 
-    // Leer el score de un jugador por índice
     public int GetScore(int playerIndex)
     {
         if (playerIndex < 0 || playerIndex >= players.Count) return 0;
