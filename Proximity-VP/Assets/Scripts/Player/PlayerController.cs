@@ -35,8 +35,6 @@ public class PlayerController : NetworkBehaviour
     public float timeVisible = 5f;
     public float timeToInvisible = 0f;
 
-    public GameObject bulletPrefab;
-
     void Awake()
     {
         //Rigidbody

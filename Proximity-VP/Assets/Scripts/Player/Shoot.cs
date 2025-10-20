@@ -5,22 +5,13 @@ public class Shoot : MonoBehaviour
 {
     // Ya no necesitamos spawnInicial ni instanciar la bala en Start
     // public GameObject spawnInicial;
-    public GameObject bulletPrefab;
     public GameObject firingPoint;
-    private GameObject bullet;
     private PlayerController pc;
-    
-    public int[] arrayInts;
     
     void Start()
     {
         pc = gameObject.GetComponent<PlayerController>();
         
-        if (bulletPrefab != null)
-        {
-            bullet = Instantiate(bulletPrefab);
-            bullet.SetActive(false); // La desactivamos hasta que se dispare
-        }
     }
 
     public void ShootBullet()
@@ -52,24 +43,6 @@ public class Shoot : MonoBehaviour
                     pc.score++;
                 }
             }
-        }
-        
-        if (bullet != null)
-        {
-            bullet.SetActive(true);
-            bullet.transform.position = firingPoint.transform.position;
-            bullet.transform.rotation = firingPoint.transform.rotation;
-            
-            StartCoroutine(HideBulletAfterDelay(0.1f));
-        }
-    }
-
-    System.Collections.IEnumerator HideBulletAfterDelay(float delay)
-    {
-        yield return new WaitForSeconds(delay);
-        if (bullet != null)
-        {
-            bullet.SetActive(false);
         }
     }
 }
