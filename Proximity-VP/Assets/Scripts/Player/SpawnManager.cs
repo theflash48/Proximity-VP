@@ -6,6 +6,9 @@ public class SpawnManager : MonoBehaviour
 {
     public static SpawnManager Instance;
 
+    public GameObject blackScreen;
+    public GameObject blackCamera;
+
     [Header("Spawn Settings")]
     public Transform[] spawnPoints; // Array con los 6 spawn points
     
@@ -30,6 +33,12 @@ public class SpawnManager : MonoBehaviour
         {
             activePlayers.Add(player);
         }
+
+        if (activePlayers.Count >= 1)
+        {
+            blackScreen.SetActive(false);
+            blackCamera.SetActive(false);
+        }
     }
 
     public void UnregisterPlayer(GameObject player)
@@ -37,6 +46,12 @@ public class SpawnManager : MonoBehaviour
         if (activePlayers.Contains(player))
         {
             activePlayers.Remove(player);
+        }
+
+        if (activePlayers.Count <= 0)
+        {
+            blackScreen.SetActive(true);
+            blackCamera.SetActive(true);
         }
     }
 

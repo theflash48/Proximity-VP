@@ -23,6 +23,8 @@ public class PlayerController : NetworkBehaviour
     public Transform groundCheck;
     public GameObject firingPoint;
     public Shoot shootScript;
+    
+    
 
     public Vector2 moveInput;
     public Vector2 lookInput;
@@ -39,7 +41,7 @@ public class PlayerController : NetworkBehaviour
     {
         //Rigidbody
         rb = GetComponent<Rigidbody>();
-        rb.freezeRotation = true; //Fisicas no afectan la rotacion del player
+        //rb.freezeRotation = true; //Fisicas no afectan la rotacion del player
 
         //MeshRenderer
         meshRenderer = GetComponent<MeshRenderer>();
@@ -180,12 +182,5 @@ public class PlayerController : NetworkBehaviour
             Gizmos.color = isGrounded ? Color.green : Color.red;
             Gizmos.DrawWireSphere(groundCheck.position, groundCheckDistance);
         }
-    }
-
-    // Intenté hacerlo con la corutina pero me daba mejor resultado usar deltaTime como explico arriba
-    IEnumerator TurnInvisible()
-    {
-        yield return new WaitForSeconds(timeVisible);
-        isVisible = false;
     }
 }
