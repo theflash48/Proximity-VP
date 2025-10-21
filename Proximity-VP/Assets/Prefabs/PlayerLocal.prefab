@@ -391,11 +391,9 @@ GameObject:
   - component: {fileID: 8441069176076299587}
   - component: {fileID: 2027933664063106621}
   - component: {fileID: 3159357720856014436}
-  - component: {fileID: 4742632831232402772}
-  - component: {fileID: 8424079461144103457}
-  - component: {fileID: 8794094548090233129}
+  - component: {fileID: 1889689395395815181}
+  - component: {fileID: 6647189456586454522}
   - component: {fileID: 2906665011396369903}
-  - component: {fileID: 7564316051077993424}
   - component: {fileID: 2219747137910009655}
   m_Layer: 0
   m_Name: PlayerLocal
@@ -643,7 +641,36 @@ MonoBehaviour:
   m_DefaultActionMap: Player
   m_SplitScreenIndex: -1
   m_Camera: {fileID: 6877589753762229}
---- !u!114 &4742632831232402772
+--- !u!114 &1889689395395815181
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8661943651431110249}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3cec7554b5ce3e54fbd75513e4df07a4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  moveSpeed: 5
+  mouseSensitivity: 5
+  maxLookAngle: 0
+  groundCheckDistance: 0.1
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 1
+  score: 0
+  playerCamera: {fileID: 6877589753762229}
+  groundCheck: {fileID: 8625145338881202856}
+  firingPoint: {fileID: 2085321015211649112}
+  shootScript: {fileID: 2219747137910009655}
+  moveInput: {x: 0, y: 0}
+  lookInput: {x: 0, y: 0}
+  isVisible: 0
+  timeVisible: 5
+  timeToInvisible: 0
+--- !u!114 &6647189456586454522
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -655,7 +682,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1113040091
+  GlobalObjectIdHash: 0
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -668,69 +695,6 @@ MonoBehaviour:
   AutoObjectParentSync: 1
   SyncOwnerTransformWhenParented: 1
   AllowOwnerToParent: 0
---- !u!114 &8424079461144103457
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8661943651431110249}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ShowTopMostFoldoutHeaderGroup: 1
-  NetworkTransformExpanded: 0
-  AutoOwnerAuthorityTickOffset: 1
-  PositionInterpolationType: 0
-  RotationInterpolationType: 0
-  ScaleInterpolationType: 0
-  PositionLerpSmoothing: 1
-  PositionMaxInterpolationTime: 0.1
-  RotationLerpSmoothing: 1
-  RotationMaxInterpolationTime: 0.1
-  ScaleLerpSmoothing: 1
-  ScaleMaxInterpolationTime: 0.1
-  AuthorityMode: 0
-  TickSyncChildren: 0
-  UseUnreliableDeltas: 0
-  SyncPositionX: 1
-  SyncPositionY: 1
-  SyncPositionZ: 1
-  SyncRotAngleX: 1
-  SyncRotAngleY: 1
-  SyncRotAngleZ: 1
-  SyncScaleX: 1
-  SyncScaleY: 1
-  SyncScaleZ: 1
-  PositionThreshold: 0.001
-  RotAngleThreshold: 0.01
-  ScaleThreshold: 0.01
-  UseQuaternionSynchronization: 0
-  UseQuaternionCompression: 0
-  UseHalfFloatPrecision: 0
-  InLocalSpace: 0
-  SwitchTransformSpaceWhenParented: 0
-  Interpolate: 1
-  SlerpPosition: 0
---- !u!114 &8794094548090233129
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8661943651431110249}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f6c0be61502bb534f922ebb746851216, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ShowTopMostFoldoutHeaderGroup: 1
-  NetworkRigidbodyBaseExpanded: 0
-  UseRigidBodyForMotion: 0
-  AutoUpdateKinematicState: 1
-  AutoSetKinematicOnDespawn: 1
 --- !u!114 &2906665011396369903
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -749,37 +713,6 @@ MonoBehaviour:
   fadeImage: {fileID: 420722015428507709}
   fadeDuration: 1
   deathEffect: {fileID: 0}
---- !u!114 &7564316051077993424
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8661943651431110249}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c4841de66326a9f41a5a0917875df175, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ShowTopMostFoldoutHeaderGroup: 1
-  moveSpeed: 5
-  mouseSensitivity: 5
-  maxLookAngle: 0
-  groundCheckDistance: 0.1
-  groundLayer:
-    serializedVersion: 2
-    m_Bits: 1
-  score: 0
-  playerCamera: {fileID: 6877589753762229}
-  groundCheck: {fileID: 8625145338881202856}
-  firingPoint: {fileID: 2085321015211649112}
-  shootScript: {fileID: 2219747137910009655}
-  moveInput: {x: 0, y: 0}
-  lookInput: {x: 0, y: 0}
-  isVisible: 0
-  timeVisible: 5
-  timeToInvisible: 0
-  bulletPrefab: {fileID: 6185866310984094621, guid: f626613845bde41428a7f3237b44dcb9, type: 3}
 --- !u!114 &2219747137910009655
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -792,6 +725,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d6c3eabd1649e2b42b58124bc1858ddb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  bulletPrefab: {fileID: 6185866310984094621, guid: f626613845bde41428a7f3237b44dcb9, type: 3}
   firingPoint: {fileID: 2085321015211649112}
-  arrayInts: 

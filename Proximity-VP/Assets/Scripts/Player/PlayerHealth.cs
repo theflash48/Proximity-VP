@@ -260,12 +260,12 @@ public int GetCurrentLives()
             }
         }
     }
-
-    void OnDestroy()
+    //Comentado por PABLO, hablado por el grupo. Esta dando fallos y no se si se va a usar
+    /*void OnDestroy()
     {
         if (SpawnManager.Instance != null)
         {
             SpawnManager.Instance.UnregisterPlayer(gameObject);
         }
-    }
+    }*/
 }

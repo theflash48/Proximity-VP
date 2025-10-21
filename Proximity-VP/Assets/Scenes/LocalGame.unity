@@ -129,6 +129,7 @@ GameObject:
   m_Component:
   - component: {fileID: 85905458}
   - component: {fileID: 85905457}
+  - component: {fileID: 85905459}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -170,7 +171,7 @@ MonoBehaviour:
       m_SingletonActionBindings: []
       m_Flags: 0
     m_Reference: {fileID: 0}
-  m_PlayerPrefab: {fileID: 8661943651431110249, guid: 582954653a321794e9a75510c4b5425c, type: 3}
+  m_PlayerPrefab: {fileID: 8661943651431110249, guid: 98bf5ef8102f9044fb871cdb4d353447, type: 3}
   m_SplitScreen: 1
   m_MaintainAspectRatioInSplitScreen: 1
   m_FixedNumberOfSplitScreens: 4
@@ -195,6 +196,23 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &85905459
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 85905456}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 576eb7340bbd51b4e92b361d6906ef96, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  materials:
+  - {fileID: 2100000, guid: 89d1316d426c851458b82f2cebbf545f, type: 2}
+  - {fileID: 2100000, guid: b1a8926b478867a4499a5426d76c107f, type: 2}
+  - {fileID: 2100000, guid: 98ba3f351587e2f4f83df3d40cd20d6e, type: 2}
+  - {fileID: 2100000, guid: 6b3e4a370566c0c4692a1569f8011a7e, type: 2}
 --- !u!1 &334581744
 GameObject:
   m_ObjectHideFlags: 0
@@ -819,6 +837,37 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 832575517}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &848842402
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 848842403}
+  m_Layer: 0
+  m_Name: ---------------------------
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &848842403
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 848842402}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -1489,3 +1538,4 @@ SceneRoots:
   - {fileID: 490757046}
   - {fileID: 1371178811}
   - {fileID: 743968252}
+  - {fileID: 848842403}
