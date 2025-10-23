@@ -98,7 +98,7 @@ public class NetworkSpawnManager : NetworkBehaviour
 
     private void SetupPlayerReferences(GameObject playerInstance)
     {
-        PlayerController playerController = playerInstance.GetComponent<PlayerController>();
+        PlayerControllerOnline playerController = playerInstance.GetComponent<PlayerControllerOnline>();
         
         if (playerController != null)
         {

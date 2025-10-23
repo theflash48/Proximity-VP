@@ -7,40 +7,44 @@ public class Shoot : MonoBehaviour
     // public GameObject spawnInicial;
     public GameObject firingPoint;
     private PlayerController pc;
+    private PlayerControllerLocal pcl;
+    private PlayerControllerOnline pco;
+    private bool isOnline = false;
     
     void Start()
     {
-        pc = gameObject.GetComponent<PlayerController>();
-        
+        if (gameObject.GetComponent<PlayerControllerLocal>())
+        {
+            isOnline = false;
+            pcl = gameObject.GetComponent<PlayerControllerLocal>();
+        }
+        if (gameObject.GetComponent<PlayerControllerOnline>())
+        {
+            isOnline = true;
+            pco = gameObject.GetComponent<PlayerControllerOnline>();
+        }
     }
 
-    public void ShootBullet()
+    public void ShootBullet(GameObject playerCamera)
     {
         if (firingPoint == null)
         {
-            PlayerController playerController = GetComponent<PlayerController>();
-            if (playerController != null && playerController.firingPoint != null)
-            {
-                firingPoint = playerController.firingPoint;
-            }
-            else
-            {
-                Debug.LogWarning("FiringPoint no encontrado en Shoot!");
-                return;
-            }
+            Debug.LogWarning("FiringPoint no encontrado en Shoot!");
+            return;
         }
-
+            
         RaycastHit hit;
-        if (Physics.Raycast(firingPoint.transform.position, firingPoint.transform.forward, out hit, 100f))
+        if (Physics.Raycast(firingPoint.transform.position, playerCamera.transform.forward, out hit, 100f))
         {
             Debug.Log("Objeto golpeado: " + hit.transform.name + " en posición: " + hit.point);
             if (hit.transform.gameObject.CompareTag("Player"))
             {
+                bool local = false;
                 PlayerHealth pc_hit = hit.transform.gameObject.GetComponent<PlayerHealth>();
                 
                 if (pc_hit != null && pc_hit.GetCurrentLives() <= 0)
                 {
-                    pc.score++;
+                    if (isOnline) pco.score++; else pcl.score++;
                 }
             }
         }

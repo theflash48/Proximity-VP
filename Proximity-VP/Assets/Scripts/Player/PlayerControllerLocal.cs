@@ -19,10 +19,12 @@ public class PlayerControllerLocal : MonoBehaviour
     MeshRenderer meshRenderer;
     PlayerInput playerInput;
 
-    public Camera playerCamera;
+    public GameObject playerCamera;
+    public Camera cameraComponent;
     public Transform groundCheck;
     public GameObject firingPoint;
     public Shoot shootScript;
+    public LineRenderer lineRender;
     
     
 
@@ -54,6 +56,10 @@ public class PlayerControllerLocal : MonoBehaviour
         
         //Shoot
         shootScript = GetComponent<Shoot>();
+        lineRender = firingPoint.GetComponent<LineRenderer>();
+        lineRender.enabled = false;
+        lineRender.useWorldSpace = true;
+        lineRender.positionCount = 2;
     }
 
     /* NUEVO: Solo el dueño puede controlar este jugador
@@ -68,11 +74,11 @@ public class PlayerControllerLocal : MonoBehaviour
             }
             
             // Deshabilitar la cámara de jugadores remotos
-            if (playerCamera != null)
+            if (cameraComponent != null)
             {
-                playerCamera.enabled = false;
+                cameraComponent.enabled = false;
                 // Opcional: también desactivar el AudioListener
-                AudioListener listener = playerCamera.GetComponent<AudioListener>();
+                AudioListener listener = cameraComponent.GetComponent<AudioListener>();
                 if (listener != null) listener.enabled = false;
             }
         }
@@ -97,7 +103,11 @@ public class PlayerControllerLocal : MonoBehaviour
         Debug.Log("Disparando!");
 
         // Sistema de disparo con raycast
-        shootScript.ShootBullet();
+        shootScript.ShootBullet(playerCamera);
+        
+        lineRender.SetPosition(0, firingPoint.transform.position);
+        lineRender.SetPosition(1, firingPoint.transform.position + playerCamera.transform.forward * 100);
+        
         isVisible = true;
 
         timeToInvisible = timeVisible;
@@ -160,17 +170,25 @@ public class PlayerControllerLocal : MonoBehaviour
         yRotation += mouseX;
 
         //Rotacion en X
-        playerCamera.transform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
+        cameraComponent.transform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
         //Rotación horizontal (izquierda/derecha) y mas control en la rotacion en Y
         transform.rotation = Quaternion.Euler(0f, yRotation, 0f);
     }
 
     void VisibilityHandler()
     {
-        if (isVisible) meshRenderer.enabled = true;
-        else meshRenderer.enabled = false;
+        if (isVisible)
+        {
+            meshRenderer.enabled = true;
+            lineRender.enabled = true;
+        }
+        else
+        {
+            meshRenderer.enabled = false;
+            lineRender.enabled = false;
+        }
         isVisible = timeToInvisible > 0.0f;
-        if (timeToInvisible > 0.0f) timeToInvisible -= Time.deltaTime;
+        if (timeToInvisible > 0.0f) timeToInvisible -= Time.deltaTime; 
     }
 
     void OnDrawGizmosSelected()

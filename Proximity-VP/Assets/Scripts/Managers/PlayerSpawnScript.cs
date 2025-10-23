@@ -6,8 +6,11 @@ public class PlayerSpawnScript : MonoBehaviour
 {
     public Transform[] SpawnPoints;
 
-    List<PlayerController> players = new List<PlayerController>();
-    List<PlayerController> playersScore =  new List<PlayerController>();
+    // Aqui estaba programado para el online, pero como tenemos dos
+    // scripts debemos hacer que funcionen para ambos, o como minimo
+    // para local para la entrega más cercana
+    List<PlayerControllerLocal> players = new List<PlayerControllerLocal>();
+    List<PlayerControllerLocal> playersScore =  new List<PlayerControllerLocal>();
 
     public void OnPlayerJoined(PlayerInput playerInput)
     {
@@ -19,7 +22,7 @@ public class PlayerSpawnScript : MonoBehaviour
         playerInput.transform.SetPositionAndRotation(sp.position, sp.rotation);
 
         // Guarda referencia a su PlayerController
-        players[idx] = playerInput.GetComponent<PlayerController>();
+        players[idx] = playerInput.GetComponent<PlayerControllerLocal>();
     }
 
     public void OnPlayerLeft(PlayerInput playerInput)

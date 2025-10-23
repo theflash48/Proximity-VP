@@ -20,7 +20,7 @@ public int GetCurrentLives()
 }
     
     public float respawnDelay = 3f;
-    private PlayerController playerController;
+    private PlayerControllerLocal playerControllerLocal;
     private Rigidbody rb;
     private Collider playerCollider;
     public Image fadeImage;
@@ -36,7 +36,7 @@ public int GetCurrentLives()
             currentLives.Value = maxLives;
         }
         
-        playerController = GetComponent<PlayerController>();
+        playerControllerLocal = GetComponent<PlayerControllerLocal>();
         rb = GetComponent<Rigidbody>();
         playerCollider = GetComponent<Collider>();
         
@@ -110,9 +110,9 @@ public int GetCurrentLives()
             Instantiate(deathEffect, transform.position, Quaternion.identity);
         }
 
-        if (IsOwner && playerController != null)
+        if (IsOwner && playerControllerLocal != null)
         {
-            playerController.enabled = false;
+            playerControllerLocal.enabled = false;
         }
         
         if (rb != null)
@@ -230,9 +230,9 @@ public int GetCurrentLives()
     [ClientRpc]
     private void ReactivatePlayerClientRpc()
     {
-        if (playerController != null && IsOwner)
+        if (playerControllerLocal != null && IsOwner)
         {
-            playerController.enabled = true;
+            playerControllerLocal.enabled = true;
         }
         if (playerCollider != null)
         {
