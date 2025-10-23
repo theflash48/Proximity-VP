@@ -6,7 +6,6 @@ public class Shoot : MonoBehaviour
     // Ya no necesitamos spawnInicial ni instanciar la bala en Start
     // public GameObject spawnInicial;
     public GameObject firingPoint;
-    private PlayerController pc;
     private PlayerControllerLocal pcl;
     private PlayerControllerOnline pco;
     private bool isOnline = false;
