@@ -1199,6 +1199,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f3ba1ec247e520f4abdcd75e86fcbc74, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _cHUD: {fileID: 420722015428507709}
+  _cReloadBar: {fileID: 5615655285069701156}
+  _cInvisibility: {fileID: 0}
 --- !u!1 &8863013873962077670
 GameObject:
   m_ObjectHideFlags: 0
