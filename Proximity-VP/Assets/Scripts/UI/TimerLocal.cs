@@ -9,15 +9,18 @@ public class TimerLocal : MonoBehaviour
 
     [SerializeField] Text timerText;
     [SerializeField]float remainingTime;
+
+    bool counting = true;
     // Update is called once per frame
     void Update()
     {
-        if (remainingTime > 0)
+        if (counting)
         {
             remainingTime -=Time.deltaTime;
         }
-        else if (remainingTime <= 0)
+        if (remainingTime <= 0)
         {
+            counting = false;
             remainingTime = 0;
         }
         
