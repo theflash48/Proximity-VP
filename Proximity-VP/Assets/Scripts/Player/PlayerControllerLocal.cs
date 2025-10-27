@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Timers;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 public class PlayerControllerLocal : MonoBehaviour
 {
@@ -14,6 +15,7 @@ public class PlayerControllerLocal : MonoBehaviour
     public float groundCheckDistance = 0.1f;
     public LayerMask groundLayer = 1;
     public int score = 0;
+    public Text txtScore;
 
     Rigidbody rb;
     MeshRenderer meshRenderer;
@@ -103,7 +105,12 @@ public class PlayerControllerLocal : MonoBehaviour
         Debug.Log("Disparando!");
 
         // Sistema de disparo con raycast
-        shootScript.ShootBullet(playerCamera);
+        bool hit = shootScript.ShootBullet(playerCamera);
+        if (hit)
+        {
+            score++;
+            txtScore.text = score.ToString();
+        }
         
         lineRender.SetPosition(0, firingPoint.transform.position);
         lineRender.SetPosition(1, firingPoint.transform.position + playerCamera.transform.forward * 100);

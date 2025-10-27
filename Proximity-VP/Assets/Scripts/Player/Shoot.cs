@@ -24,12 +24,12 @@ public class Shoot : MonoBehaviour
         }
     }
 
-    public void ShootBullet(GameObject playerCamera)
+    public bool ShootBullet(GameObject playerCamera)
     {
         if (firingPoint == null)
         {
             Debug.LogWarning("FiringPoint no encontrado en Shoot!");
-            return;
+            return false;
         }
             
         RaycastHit hit;
@@ -39,13 +39,14 @@ public class Shoot : MonoBehaviour
             if (hit.transform.gameObject.CompareTag("Player"))
             {
                 bool local = false;
-                PlayerHealth pc_hit = hit.transform.gameObject.GetComponent<PlayerHealth>();
+                PlayerHealthLocal pc_hit = hit.transform.gameObject.GetComponent<PlayerHealthLocal>();
                 
-                if (pc_hit != null && pc_hit.GetCurrentLives() <= 0)
+                if (pc_hit != null && pc_hit.currentLives <= 0)
                 {
-                    if (isOnline) pco.score++; else pcl.score++;
+                    return true;
                 }
             }
         }
+        return false;
     }
 }
