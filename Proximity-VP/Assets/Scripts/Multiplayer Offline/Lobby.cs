@@ -5,7 +5,6 @@ using UnityEngine.InputSystem;
 public class Lobby : MonoBehaviour
 {
     PlayerInputManager inputManager;
-    public Material[] materials;
 
     private void Awake()
     {
@@ -14,8 +13,28 @@ public class Lobby : MonoBehaviour
 
     public void OnPlayerJoined(PlayerInput input)
     {
-        var id = inputManager.playerCount - 1;
         var player = input.gameObject;
-        player.transform.position = new(id, 1, 0);
+
+        // Registrar al jugador en la lista
+        SpawnManager.Instance.RegisterPlayer(player);
+
+        // Obtener el mejor spawn (el mas lejano de los demas jugadores)
+        var spawnPoint = SpawnManager.Instance.GetFarthestSpawnPoint(player);
+
+        if (spawnPoint != null)
+        {
+            player.transform.position = spawnPoint.position;
+            player.transform.rotation = spawnPoint.rotation;
+        }
+        else
+        {
+            Debug.LogWarning("No se encontro spawn point xd");
+        }
+    }
+
+    public void OnPlayerLeft(PlayerInput input)
+    {
+        var player = input.gameObject;
+        SpawnManager.Instance.UnregisterPlayer(player);
     }
 }
