@@ -14,6 +14,8 @@ public class SpawnManager : MonoBehaviour
     
     private List<GameObject> activePlayers = new List<GameObject>();
 
+    public int ActivePlayersCount => activePlayers.Count;
+
     void Awake()
     {
         if (Instance == null)
