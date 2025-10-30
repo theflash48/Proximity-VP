@@ -3,7 +3,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class PlayerHealth : NetworkBehaviour
+public class PlayerHealthOnline : NetworkBehaviour
 {
     public int maxLives = 2;
     

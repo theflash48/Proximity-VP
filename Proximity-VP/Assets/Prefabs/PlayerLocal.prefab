@@ -655,7 +655,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &5431721436438918346
 RectTransform:
   m_ObjectHideFlags: 0
@@ -703,7 +703,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: e7f5455ceed7de04bb7a8b987094f60c, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -963,10 +963,9 @@ GameObject:
   - component: {fileID: 2027933664063106621}
   - component: {fileID: 3159357720856014436}
   - component: {fileID: 1889689395395815181}
-  - component: {fileID: 6647189456586454522}
-  - component: {fileID: 2906665011396369903}
   - component: {fileID: 2219747137910009655}
   - component: {fileID: 3371151540221028801}
+  - component: {fileID: 646033740549643927}
   m_Layer: 0
   m_Name: PlayerLocal
   m_TagString: Player
@@ -1245,49 +1244,6 @@ MonoBehaviour:
   isVisible: 0
   timeVisible: 5
   timeToInvisible: 0
---- !u!114 &6647189456586454522
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8661943651431110249}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 313636383
-  InScenePlacedSourceGlobalObjectIdHash: 0
-  DeferredDespawnTick: 0
-  Ownership: 1
-  AlwaysReplicateAsRoot: 0
-  SynchronizeTransform: 1
-  ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 1
-  SpawnWithObservers: 1
-  DontDestroyWithOwner: 0
-  AutoObjectParentSync: 1
-  SyncOwnerTransformWhenParented: 1
-  AllowOwnerToParent: 0
---- !u!114 &2906665011396369903
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8661943651431110249}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f178c6b4e1a6c16449680331697dcbe3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ShowTopMostFoldoutHeaderGroup: 1
-  maxLives: 2
-  respawnDelay: 3
-  fadeImage: {fileID: 1832662543855664540}
-  fadeDuration: 1
-  deathEffect: {fileID: 0}
 --- !u!114 &2219747137910009655
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1316,3 +1272,21 @@ MonoBehaviour:
   _cHUD: {fileID: 420722015428507709}
   _cReloadBar: {fileID: 5615655285069701156}
   _cInvisibility: {fileID: 1183035673349082438}
+--- !u!114 &646033740549643927
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8661943651431110249}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc5f51068df2ec14d9e286c9bb0dc533, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxLives: 2
+  currentLives: 2
+  respawnDelay: 3
+  fadeImage: {fileID: 1832662543855664540}
+  fadeDuration: 1
+  deathEffect: {fileID: 0}

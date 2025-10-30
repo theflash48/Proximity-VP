@@ -63,7 +63,7 @@ public class PlayerHealthLocal : MonoBehaviour
         }
     }
 
-    public bool TakeDamage()
+    public void TakeDamage()
     {
         currentLives--;
         Debug.Log(gameObject.name + " vidas restantes: " + currentLives);
@@ -71,13 +71,11 @@ public class PlayerHealthLocal : MonoBehaviour
         if (currentLives <= 0)
         {
             Die();
-            return true;
         }
         else
         {
             // Feedback visual de daño (opcional)
             StartCoroutine(DamageFlash());
-            return false;
         }
     }
 

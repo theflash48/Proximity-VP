@@ -40,6 +40,7 @@ public class Shoot : MonoBehaviour
             {
                 bool local = false;
                 PlayerHealthLocal pc_hit = hit.transform.gameObject.GetComponent<PlayerHealthLocal>();
+                pc_hit.TakeDamage();
                 
                 if (pc_hit != null && pc_hit.currentLives <= 0)
                 {
