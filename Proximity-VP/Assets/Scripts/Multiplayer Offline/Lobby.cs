@@ -115,10 +115,20 @@ public class Lobby : MonoBehaviour
     {
         foreach (PlayerInput player in players)
         {
-            if (player.camera != null)
+            if (player.camera == null) continue;
+
+
+            if (player.playerIndex == 0)
             {
-                // Para 3 jugadores: viewport completo
-                player.camera.rect = new Rect(0f, 0f, 1f, 1f);
+                player.camera.rect = new Rect(0f, 0.5f, 0.5f, 0.5f);
+            }
+            else if (player.playerIndex == 1)
+            {
+                player.camera.rect = new Rect(0.5f, 0.5f, 0.5f, 0.5f);
+            }
+            else // playerIndex == 2 (o cualquier otro índice restante)
+            {
+                player.camera.rect = new Rect(0.25f, 0f, 0.5f, 0.5f);
             }
         }
     }
