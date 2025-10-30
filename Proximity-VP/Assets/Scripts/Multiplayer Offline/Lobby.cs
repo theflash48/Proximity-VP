@@ -137,10 +137,29 @@ public class Lobby : MonoBehaviour
     {
         foreach (PlayerInput player in players)
         {
-            if (player.camera != null)
+            if (player.camera == null) continue;
+
+            // Asignación por playerIndex:
+            // 0 -> arriba izquierda, 1 -> arriba derecha,
+            // 2 -> abajo izquierda, 3 -> abajo derecha
+            switch (player.playerIndex)
             {
-                // Para 4 jugadores: viewport completo
-                player.camera.rect = new Rect(0f, 0f, 1f, 1f);
+                case 0:
+                    player.camera.rect = new Rect(0f, 0.5f, 0.5f, 0.5f); // top-left
+                    break;
+                case 1:
+                    player.camera.rect = new Rect(0.5f, 0.5f, 0.5f, 0.5f); // top-right
+                    break;
+                case 2:
+                    player.camera.rect = new Rect(0f, 0f, 0.5f, 0.5f); // bottom-left
+                    break;
+                case 3:
+                    player.camera.rect = new Rect(0.5f, 0f, 0.5f, 0.5f); // bottom-right
+                    break;
+                default:
+                    // Fallback razonable por si los índices no son 0..3
+                    player.camera.rect = new Rect(0f, 0f, 1f, 1f);
+                    break;
             }
         }
     }
