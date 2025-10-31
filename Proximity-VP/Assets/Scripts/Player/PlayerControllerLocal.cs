@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Timers;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.DualShock;
+using UnityEngine.InputSystem.XInput;
 using UnityEngine.UI;
 
 public class PlayerControllerLocal : MonoBehaviour
@@ -55,7 +57,7 @@ public class PlayerControllerLocal : MonoBehaviour
         //Cursor
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
-        
+
         //Shoot
         shootScript = GetComponent<Shoot>();
         lineRender = firingPoint.GetComponent<LineRenderer>();
@@ -94,6 +96,11 @@ public class PlayerControllerLocal : MonoBehaviour
 
     public void OnLook(InputValue value)
     {
+        if (playerInput.currentControlScheme == "Keyboard&Mouse")
+            mouseSensitivity = 10;
+        else
+            mouseSensitivity = 100;
+
         lookInput = value.Get<Vector2>();
     }
 
