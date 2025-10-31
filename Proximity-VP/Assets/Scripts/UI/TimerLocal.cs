@@ -2,14 +2,24 @@ using System.Collections;
 using UnityEngine;
 using System.Collections.Generic;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class TimerLocal : MonoBehaviour
 {
     [SerializeField] Text timerText;
-    [SerializeField]float remainingTime;
+    [SerializeField] public float remainingTime;
+    [SerializeField] GameObject uiCanvas;
+    ButtonsController btnControllers;
 
     bool counting = false;
     bool gameStarted = false;
+
+    private void Awake()
+    {
+        btnControllers = GetComponent<ButtonsController>();
+
+        uiCanvas.SetActive(false);
+    }
 
     void Update()
     {
@@ -29,6 +39,8 @@ public class TimerLocal : MonoBehaviour
                 counting = false;
                 remainingTime = 0;
                 Debug.Log("Tiempo Acabado");
+                //Time.timeScale = 0;
+                uiCanvas.SetActive(true);
             }
         }
         
@@ -36,6 +48,11 @@ public class TimerLocal : MonoBehaviour
         int seconds = Mathf.FloorToInt(remainingTime % 60);
         timerText.text = string.Format("{0:00}:{1:00}", minutes, seconds);
 
+        if (Input.GetKeyDown(KeyCode.V))
+        {
+            btnControllers.Restart();
+
+        }
         
     }
 

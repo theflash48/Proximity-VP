@@ -19,6 +19,7 @@ public class MainMenuController : MonoBehaviour
 
     public void GoToMainMenu()
     {
+        Time.timeScale = 1;
         gridMainMenu.SetActive(true);
         gridGameModeSelect.SetActive(false);
         gmManager.conection = GameModeManager.conectionType.none;
