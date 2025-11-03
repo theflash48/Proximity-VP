@@ -67,15 +67,12 @@ public class TimerLocal : MonoBehaviour
     public static OnEndGame onEndGame;
     void EndGame()
     {
-        if (SpawnManager.Instance.ActivePlayersCount >= 2 && !gameStarted)
-        {
-            counting = false;
-            remainingTime = 0;
-            Debug.Log("Tiempo Acabado");
-            //Time.timeScale = 0;
-            uiCanvas.SetActive(true);
-            onEndGame?.Invoke();
-        }
+        counting = false;
+        remainingTime = 0;
+        Debug.Log("Tiempo Acabado");
+        //Time.timeScale = 0;
+        uiCanvas.SetActive(true);
+        onEndGame?.Invoke();
     }
     
 }
