@@ -335,7 +335,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 06c24aff1242a1c49b3f72c43a8fea35, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  endScreen: {fileID: 1408137839}
+  localPlayers: []
+  playerOrder: []
+  endScreen: {fileID: 0}
   scoreBanners:
   - {fileID: 8847041535466667719, guid: a67708bc7805f214e997bf644e5eb2a9, type: 3}
   - {fileID: 1355860171742360213, guid: 40296509c46958f4cb2623ef643154d4, type: 3}
@@ -1573,7 +1575,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1408137840
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2016,7 +2018,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1795279699
 RectTransform:
   m_ObjectHideFlags: 0

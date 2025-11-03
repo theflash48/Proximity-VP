@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
-using static UnityEditor.Experimental.GraphView.GraphView;
 
 [RequireComponent(typeof(PlayerInputManager))]
 public class Lobby : MonoBehaviour
@@ -83,16 +82,16 @@ public class Lobby : MonoBehaviour
 
     void SetTwoPlayersViewport(PlayerInput[] players)
     {
-        // Calcular la relación de aspecto actual de la pantalla
+        // Calcular la relaciï¿½n de aspecto actual de la pantalla
         float aspectScreen = (float)Screen.width / Screen.height;
         // Altura normalizada para cada viewport para mantener 16:9
         float height = (0.5f * aspectScreen) * (9f / 16f);
 
-        // Si height es mayor que 1, significa que no cabe, pero en teoría para pantallas 16:9, height=0.5, que es menor que 1.
-        // Si height es mayor que 1, la limitamos a 1, pero en realidad no debería pasar en pantallas normales.
+        // Si height es mayor que 1, significa que no cabe, pero en teorï¿½a para pantallas 16:9, height=0.5, que es menor que 1.
+        // Si height es mayor que 1, la limitamos a 1, pero en realidad no deberï¿½a pasar en pantallas normales.
         if (height > 1f) height = 1f;
 
-        // Calcular la posición Y para centrar verticalmente
+        // Calcular la posiciï¿½n Y para centrar verticalmente
         float y = (1f - height) / 2f;
 
         foreach (PlayerInput player in players)
@@ -126,7 +125,7 @@ public class Lobby : MonoBehaviour
             {
                 player.camera.rect = new Rect(0.5f, 0.5f, 0.5f, 0.5f);
             }
-            else // playerIndex == 2 (o cualquier otro índice restante)
+            else // playerIndex == 2 (o cualquier otro ï¿½ndice restante)
             {
                 player.camera.rect = new Rect(0.25f, 0f, 0.5f, 0.5f);
             }
@@ -139,7 +138,7 @@ public class Lobby : MonoBehaviour
         {
             if (player.camera == null) continue;
 
-            // Asignación por playerIndex:
+            // Asignaciï¿½n por playerIndex:
             // 0 -> arriba izquierda, 1 -> arriba derecha,
             // 2 -> abajo izquierda, 3 -> abajo derecha
             switch (player.playerIndex)
@@ -157,7 +156,7 @@ public class Lobby : MonoBehaviour
                     player.camera.rect = new Rect(0.5f, 0f, 0.5f, 0.5f); // bottom-right
                     break;
                 default:
-                    // Fallback razonable por si los índices no son 0..3
+                    // Fallback razonable por si los ï¿½ndices no son 0..3
                     player.camera.rect = new Rect(0f, 0f, 1f, 1f);
                     break;
             }
