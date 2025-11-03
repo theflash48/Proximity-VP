@@ -7,6 +7,7 @@ public class PlayerHUD : MonoBehaviour
     [SerializeField] private Image _cHUD;
     [SerializeField] private Image _cReloadBar;
     [SerializeField] private Image _cInvisibility;
+    public Text _cPlace;
 
     void Start()
     {
