@@ -8,10 +8,17 @@ public class PlayerHUD : MonoBehaviour
     [SerializeField] private Image _cReloadBar;
     [SerializeField] private Image _cInvisibility;
     public Text _cPlace;
+    public Text _cScore;
+
 
     void Start()
     {
         _cReloadBar.fillAmount = 0;
+    }
+
+    public void _fUpdateScore(int score)
+    {
+        _cScore.text = score.ToString();
     }
 
     public void _fHealthUI(float cur, float max)

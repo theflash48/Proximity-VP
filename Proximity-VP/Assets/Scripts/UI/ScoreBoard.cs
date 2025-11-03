@@ -7,10 +7,10 @@ using static UnityEditor.Experimental.GraphView.GraphView;
 
 public class ScoreBoard : MonoBehaviour
 {
-    List<PlayerControllerLocal> localPlayers = new List<PlayerControllerLocal>();
+    public List<PlayerControllerLocal> localPlayers = new List<PlayerControllerLocal>();
     List<PlayerControllerOnline> onlinePlayers = new List<PlayerControllerOnline>();
 
-    List<GameObject> playerOrder = new List<GameObject>();
+    public List<GameObject> playerOrder = new List<GameObject>();
 
     public GameObject endScreen;
     public GameObject[] scoreBanners;
@@ -20,6 +20,7 @@ public class ScoreBoard : MonoBehaviour
     {
         TimerLocal.onTryStartGame += LocatePlayers;
         PlayerControllerLocal.onScoreUP += UpdateScores;
+        TimerLocal.onEndGame += PrintScores;
     }
 
     void Start()
@@ -30,6 +31,10 @@ public class ScoreBoard : MonoBehaviour
     private void LocatePlayers()
     {
         GameObject[] players = GameObject.FindGameObjectsWithTag("Player");
+        for (int i = 0; i < players.Length; i++) {
+            playerOrder.Add(players[i]);
+            Debug.Log(i + " added");
+        }
 
         if (players[0].GetComponent<PlayerControllerLocal>() != null)
         {
@@ -53,15 +58,13 @@ public class ScoreBoard : MonoBehaviour
             return;
         }
 
-        for (int i = 0; i < players.Length; i++) {
-            playerOrder.Add(players[i]);
-        }
     }
 
     private void OnDisable()
     {
         TimerLocal.onTryStartGame -= LocatePlayers;
         PlayerControllerLocal.onScoreUP -= UpdateScores;
+        TimerLocal.onEndGame -= PrintScores;
     }
 
     void UpdateScores()
@@ -124,7 +127,11 @@ public class ScoreBoard : MonoBehaviour
         {
             for (int i = 0; i < localPlayers.Count; i++)
             {
-                GameObject ban = Instantiate(scoreBanners[0]);
+                GameObject ban;
+                if (i >= 3)
+                    ban = Instantiate(scoreBanners[3]);
+                else
+                    ban = Instantiate(scoreBanners[i]);
                 ban.transform.SetParent(scorePanel.transform);
                 switch (i)
                 {
@@ -134,28 +141,28 @@ public class ScoreBoard : MonoBehaviour
                             if (localPlayers[0].score == playerOrder[b].GetComponent<PlayerControllerLocal>().score)
                                 playersName = b + 1;
                         }
-                        ban.GetComponent<ScoreBanner>().UpdateBanner("1st", "Player " + playersName.ToString(), localPlayers[0].score.ToString());
+                        ban.GetComponent<ScoreBanner>().UpdateBanner("1st", "Player " + playersName.ToString(), localPlayers[0].score.ToString() + " Kills");
                         break;
                     case 1:
                         for (int b = 0; b < playerOrder.Count; b++) {
                             if (localPlayers[1].score == playerOrder[b].GetComponent<PlayerControllerLocal>().score)
                                 playersName = b + 1;
                         }
-                        ban.GetComponent<ScoreBanner>().UpdateBanner("2nd", "Player " + playersName.ToString(), localPlayers[1].score.ToString());
+                        ban.GetComponent<ScoreBanner>().UpdateBanner("2nd", "Player " + playersName.ToString(), localPlayers[1].score.ToString() + " Kills");
                         break;
                     case 2:
                         for (int b = 0; b < playerOrder.Count; b++) {
                             if (localPlayers[2].score == playerOrder[b].GetComponent<PlayerControllerLocal>().score)
                                 playersName = b + 1;
                         }
-                        ban.GetComponent<ScoreBanner>().UpdateBanner("3rd", "Player " + playersName.ToString(), localPlayers[2].score.ToString());
+                        ban.GetComponent<ScoreBanner>().UpdateBanner("3rd", "Player " + playersName.ToString(), localPlayers[2].score.ToString() + " Kills");
                         break;
                     case 3:
                         for (int b = 0; b < playerOrder.Count; b++) {
                             if (localPlayers[3].score == playerOrder[b].GetComponent<PlayerControllerLocal>().score)
                                 playersName = b + 1;
                         }
-                        ban.GetComponent<ScoreBanner>().UpdateBanner("2nd", "Player " + playersName.ToString(), localPlayers[3].score.ToString());
+                        ban.GetComponent<ScoreBanner>().UpdateBanner("2nd", "Player " + playersName.ToString(), localPlayers[3].score.ToString() + " Kills");
                         break;
                 }
             }
@@ -174,28 +181,28 @@ public class ScoreBoard : MonoBehaviour
                             if (onlinePlayers[0].score == playerOrder[b].GetComponent<PlayerControllerOnline>().score)
                                 playersName = b + 1;
                         }
-                        ban.GetComponent<ScoreBanner>().UpdateBanner("1st", "Player " + playersName.ToString(), onlinePlayers[0].score.ToString());
+                        ban.GetComponent<ScoreBanner>().UpdateBanner("1st", "Player " + playersName.ToString(), onlinePlayers[0].score.ToString() + " Kills");
                         break;
                     case 1:
                         for (int b = 0; b < playerOrder.Count; b++) {
                             if (onlinePlayers[1].score == playerOrder[b].GetComponent<PlayerControllerOnline>().score)
                                 playersName = b + 1;
                         }
-                        ban.GetComponent<ScoreBanner>().UpdateBanner("2nd", "Player " + playersName.ToString(), onlinePlayers[1].score.ToString());
+                        ban.GetComponent<ScoreBanner>().UpdateBanner("2nd", "Player " + playersName.ToString(), onlinePlayers[1].score.ToString() + " Kills");
                         break;
                     case 2:
                         for (int b = 0; b < playerOrder.Count; b++) {
                             if (onlinePlayers[2].score == playerOrder[b].GetComponent<PlayerControllerOnline>().score)
                                 playersName = b + 1;
                         }
-                        ban.GetComponent<ScoreBanner>().UpdateBanner("3rd", "Player " + playersName.ToString(), onlinePlayers[2].score.ToString());
+                        ban.GetComponent<ScoreBanner>().UpdateBanner("3rd", "Player " + playersName.ToString(), onlinePlayers[2].score.ToString() + " Kills");
                         break;
                     case 3:
                         for (int b = 0; b < playerOrder.Count; b++) {
                             if (onlinePlayers[3].score == playerOrder[b].GetComponent<PlayerControllerOnline>().score)
                                 playersName = b + 1;
                         }
-                        ban.GetComponent<ScoreBanner>().UpdateBanner("2nd", "Player " + playersName.ToString(), onlinePlayers[3].score.ToString());
+                        ban.GetComponent<ScoreBanner>().UpdateBanner("2nd", "Player " + playersName.ToString(), onlinePlayers[3].score.ToString() + " Kills");
                         break;
                 }
             }
@@ -204,6 +211,7 @@ public class ScoreBoard : MonoBehaviour
 
     public void ReloadScene()
     {
+        Debug.LogError("Reload");
         SceneManager.LoadScene(SceneManager.GetActiveScene().ToString());
     }
 }

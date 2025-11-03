@@ -41,6 +41,33 @@ public class PlayerControllerLocal : MonoBehaviour
     public float timeVisible = 5f;
     public float timeToInvisible = 0f;
 
+    void OnEnable()
+    {
+        TimerLocal.onTryStartGame += ToggleControls;
+        TimerLocal.onEndGame += ToggleControls;
+    }
+
+    void ToggleControls()
+    {
+        if (playerInput.enabled) {
+
+            playerInput.enabled = false;
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        }
+        else {
+            playerInput.enabled = true;
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
+    }
+
+    void OnDisable()
+    {
+        TimerLocal.onTryStartGame -= ToggleControls;
+        TimerLocal.onEndGame -= ToggleControls;
+    }
+
     void Awake()
     {
         //Rigidbody
@@ -133,6 +160,7 @@ public class PlayerControllerLocal : MonoBehaviour
     public void ScoreUP()
     {
         score++;
+        gameObject.GetComponent<PlayerHUD>()._fUpdateScore(score);
         onScoreUP?.Invoke();
     }
     
