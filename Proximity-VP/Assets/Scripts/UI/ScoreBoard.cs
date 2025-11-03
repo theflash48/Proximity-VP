@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 using static UnityEditor.Experimental.GraphView.GraphView;
 
 public class ScoreBoard : MonoBehaviour
@@ -11,6 +12,7 @@ public class ScoreBoard : MonoBehaviour
 
     List<GameObject> playerOrder = new List<GameObject>();
 
+    public GameObject endScreen;
     public GameObject[] scoreBanners;
     public GameObject scorePanel;
 
@@ -18,6 +20,11 @@ public class ScoreBoard : MonoBehaviour
     {
         TimerLocal.onTryStartGame += LocatePlayers;
         PlayerControllerLocal.onScoreUP += UpdateScores;
+    }
+
+    void Start()
+    {
+        endScreen.SetActive(false);
     }
 
     private void LocatePlayers()
@@ -112,6 +119,7 @@ public class ScoreBoard : MonoBehaviour
     int playersName;
     public void PrintScores()
     {
+        endScreen.SetActive(true);
         if (localPlayers[0].GetComponent<PlayerControllerLocal>() != null)
         {
             for (int i = 0; i < localPlayers.Count; i++)
@@ -192,5 +200,10 @@ public class ScoreBoard : MonoBehaviour
                 }
             }
         }
+    }
+
+    public void ReloadScene()
+    {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().ToString());
     }
 }
