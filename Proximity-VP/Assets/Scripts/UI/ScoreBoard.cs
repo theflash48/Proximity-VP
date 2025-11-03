@@ -11,10 +11,11 @@ public class ScoreBoard : MonoBehaviour
 
     private void OnEnable()
     {
+        TimerLocal.onTryStartGame += LocatePlayers;
         PlayerControllerLocal.onScoreUP += UpdateScores;
     }
 
-    private void Start()
+    private void LocatePlayers()
     {
         GameObject[] players = GameObject.FindGameObjectsWithTag("Player");
 
@@ -43,6 +44,7 @@ public class ScoreBoard : MonoBehaviour
 
     private void OnDisable()
     {
+        TimerLocal.onTryStartGame -= LocatePlayers;
         PlayerControllerLocal.onScoreUP -= UpdateScores;
     }
 
