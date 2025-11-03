@@ -36,11 +36,7 @@ public class TimerLocal : MonoBehaviour
 
             if (remainingTime <= 0)
             {
-                counting = false;
-                remainingTime = 0;
-                Debug.Log("Tiempo Acabado");
-                //Time.timeScale = 0;
-                uiCanvas.SetActive(true);
+                EndGame();
             }
         }
         
@@ -64,6 +60,21 @@ public class TimerLocal : MonoBehaviour
             gameStarted = true;
             counting = true;
             onTryStartGame?.Invoke();
+        }
+    }
+    
+    public delegate void OnEndGame();
+    public static OnEndGame onEndGame;
+    void EndGame()
+    {
+        if (SpawnManager.Instance.ActivePlayersCount >= 2 && !gameStarted)
+        {
+            counting = false;
+            remainingTime = 0;
+            Debug.Log("Tiempo Acabado");
+            //Time.timeScale = 0;
+            uiCanvas.SetActive(true);
+            onEndGame?.Invoke();
         }
     }
     
