@@ -115,7 +115,8 @@ public class PlayerControllerLocal : MonoBehaviour
         bool hit = shootScript.ShootBullet(playerCamera);
         if (hit)
         {
-            score++;
+            ScoreUP();
+            
             txtScore.text = score.ToString();
         }
         
@@ -127,6 +128,14 @@ public class PlayerControllerLocal : MonoBehaviour
         timeToInvisible = timeVisible;
     }
 
+    public delegate void OnScoreUP();
+    public static OnScoreUP onScoreUP;
+    public void ScoreUP()
+    {
+        score++;
+        onScoreUP?.Invoke();
+    }
+    
     private void Update()
     {
         // Solo el dueño ejecuta la lógica local
