@@ -12,7 +12,7 @@ public class SpawnManager : MonoBehaviour
     [Header("Spawn Settings")]
     public Transform[] spawnPoints; // Array con los 6 spawn points
     
-    private List<GameObject> activePlayers = new List<GameObject>();
+    public List<GameObject> activePlayers = new List<GameObject>();
 
     public int ActivePlayersCount => activePlayers.Count;
 

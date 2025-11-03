@@ -12,7 +12,7 @@ public class TimerLocal : MonoBehaviour
     ButtonsController btnControllers;
 
     bool counting = false;
-    bool gameStarted = false;
+    public bool gameStarted = false;
 
     private void Awake()
     {
@@ -29,7 +29,7 @@ public class TimerLocal : MonoBehaviour
             TryStartGame();
         }
 
-        //Actualizar temporizador si está en marcha
+        //Actualizar temporizador si estï¿½ en marcha
         if (counting)
         {
             remainingTime -=Time.deltaTime;

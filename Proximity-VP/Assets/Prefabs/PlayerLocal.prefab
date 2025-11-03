@@ -1318,7 +1318,7 @@ MonoBehaviour:
   moveInput: {x: 0, y: 0}
   lookInput: {x: 0, y: 0}
   isVisible: 0
-  timeVisible: 5
+  timeVisible: 1
   timeToInvisible: 0
 --- !u!114 &2219747137910009655
 MonoBehaviour:
@@ -1363,6 +1363,8 @@ MonoBehaviour:
   maxLives: 2
   currentLives: 2
   respawnDelay: 3
+  gameManager: {fileID: 0}
+  timer: {fileID: 0}
   fadeImage: {fileID: 1832662543855664540}
   fadeDuration: 1
   deathEffect: {fileID: 0}

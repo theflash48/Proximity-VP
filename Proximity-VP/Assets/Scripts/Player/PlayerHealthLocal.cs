@@ -10,6 +10,9 @@ public class PlayerHealthLocal : MonoBehaviour
     
     [Header("Respawn Settings")]
     public float respawnDelay = 3f;
+
+    public GameObject gameManager;
+    public TimerLocal timer;
     
     [Header("References")]
     private PlayerControllerLocal playerController;
@@ -33,6 +36,9 @@ public class PlayerHealthLocal : MonoBehaviour
         rb = GetComponent<Rigidbody>();
         playerCollider = GetComponent<Collider>();
         
+        gameManager = GameObject.Find("GameManager");
+        timer = gameManager.GetComponent<TimerLocal>();
+        
         // Asegurarse de que la pantalla empiece transparente
         if (fadeImage != null)
         {
@@ -49,22 +55,13 @@ public class PlayerHealthLocal : MonoBehaviour
         }
     }
 
-    void OnTriggerEnter(Collider other)
-    {
-        // Si es golpeado por una bala
-        if (other.CompareTag("Bullet") && !isDead)
-        {
-            // Verificar que la bala no sea del mismo jugador
-            BulletScript bullet = other.GetComponent<BulletScript>();
-            if (bullet != null && bullet.owner != gameObject)
-            {
-                TakeDamage();
-            }
-        }
-    }
-
     public void TakeDamage()
     {
+        if (!timer.gameStarted || timer.remainingTime <= 0)
+        {
+            return;
+        }
+        
         currentLives--;
         Debug.Log(gameObject.name + " vidas restantes: " + currentLives);
 
