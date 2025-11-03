@@ -51,17 +51,20 @@ public class TimerLocal : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.V))
         {
             btnControllers.Restart();
-
         }
         
     }
 
+    public delegate void OnTryStartGame();
+    public static OnTryStartGame onTryStartGame;
     void TryStartGame()
     {
         if (SpawnManager.Instance.ActivePlayersCount >= 2 && !gameStarted)
         {
             gameStarted = true;
             counting = true;
+            onTryStartGame?.Invoke();
         }
     }
+    
 }

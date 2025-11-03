@@ -54,21 +54,6 @@ public int GetCurrentLives()
         }
     }
 
-    void OnTriggerEnter(Collider other)
-    {
-        if (!IsServer) return;
-
-        // Si es golpeado por una bala
-        if (other.CompareTag("Bullet") && !isDead)
-        {
-            // Verificar que la bala no sea del mismo jugador
-            BulletScript bullet = other.GetComponent<BulletScript>();
-            if (bullet != null && bullet.owner != gameObject)
-            {
-                TakeDamage();
-            }
-        }
-    }
 
     public void TakeDamage()
     {
