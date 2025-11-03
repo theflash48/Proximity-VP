@@ -212,6 +212,6 @@ public class ScoreBoard : MonoBehaviour
     public void ReloadScene()
     {
         Debug.LogError("Reload");
-        SceneManager.LoadScene(SceneManager.GetActiveScene().ToString());
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 }

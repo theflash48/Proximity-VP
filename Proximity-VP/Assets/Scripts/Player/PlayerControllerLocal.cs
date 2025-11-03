@@ -49,17 +49,17 @@ public class PlayerControllerLocal : MonoBehaviour
 
     void ToggleControls()
     {
-        if (playerInput.enabled) {
+        //if (!Cursor.visible) {
 
-            playerInput.enabled = false;
+            //playerInput.enabled = false;
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
-        }
+        /*}
         else {
-            playerInput.enabled = true;
+            //playerInput.enabled = true;
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
-        }
+        }*/
     }
 
     void OnDisable()
