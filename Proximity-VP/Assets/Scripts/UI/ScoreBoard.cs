@@ -210,7 +210,11 @@ public class ScoreBoard : MonoBehaviour
 
     public void ReloadScene()
     {
-        Debug.LogError("Reload");
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+
+    public void BackToMain()
+    {
+        SceneManager.LoadScene("MainMenu");
     }
 }
