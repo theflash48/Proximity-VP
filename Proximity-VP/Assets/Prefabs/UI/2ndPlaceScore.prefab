@@ -90,6 +90,7 @@ GameObject:
   - component: {fileID: 845802795240723894}
   - component: {fileID: 3297695692848009973}
   - component: {fileID: 5869243372554024189}
+  - component: {fileID: 2141632177927961603}
   m_Layer: 5
   m_Name: 2ndPlaceScore
   m_TagString: Untagged
@@ -157,6 +158,21 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &2141632177927961603
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1355860171742360213}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bb2620145e9a7ef438453834d848f7f2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  position: {fileID: 6955638974840761296}
+  playerName: {fileID: 7756598192701238750}
+  score: {fileID: 6328410829768270346}
 --- !u!1 &5071220254890294902
 GameObject:
   m_ObjectHideFlags: 0

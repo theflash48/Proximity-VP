@@ -1,16 +1,15 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 public class ScoreBanner : MonoBehaviour
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        
-    }
+	public Text position;
+	public Text playerName;
+	public Text score;
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
+	public void UpdateBanner(string pos, string nam, string scr) {
+		position.text = pos;
+		playerName.text = nam;
+		score.text = scr;
+	}
 }
