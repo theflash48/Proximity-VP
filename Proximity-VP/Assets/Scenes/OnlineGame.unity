@@ -1056,6 +1056,7 @@ MonoBehaviour:
   - {fileID: 3109985592185937986}
   - {fileID: 5693127919461359151}
   - {fileID: 233523642600909214}
+  activePlayers: []
 --- !u!4 &574531987
 Transform:
   m_ObjectHideFlags: 0
