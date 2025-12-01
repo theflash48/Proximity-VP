@@ -218,3 +218,67 @@ public class ScoreBoard : MonoBehaviour
         SceneManager.LoadScene("MainMenu");
     }
 }
+
+
+// CODIGO IKER PERDON TIM
+
+    public GameResultUploader resultUploader; // asignar en el Inspector
+    public int currentMapId = 1;              // o el que toque
+
+    public void PrintScores()
+    {
+        endScreen.SetActive(true);
+        var gameMode = FindObjectOfType<GameModeManager>();
+        if (gameMode != null && gameMode.conection == GameModeManager.conectionType.online &&
+            AccountSession.Instance != null && AccountSession.Instance.IsLoggedIn &&
+            resultUploader != null)
+        {
+            StartCoroutine(SendResultsCoroutine());
+        }
+    }
+
+    IEnumerator SendResultsCoroutine()
+    {
+        // 1) si no se ha creado la partida en el server aún, la creamos
+        if (resultUploader.CurrentGameId <= 0)
+        {
+            int totalPlayers = localPlayers.Count > 0 ? localPlayers.Count : onlinePlayers.Count;
+            yield return resultUploader.StartGameOnServer(totalPlayers, currentMapId);
+        }
+
+        // 2) montamos los datos de cada jugador
+        List<GameResultUploader.PlayerResult> players = new List<GameResultUploader.PlayerResult>();
+
+        if (localPlayers.Count > 0)
+        {
+            foreach (var p in localPlayers)
+            {
+                // si no hay login, podemos mandar acc_id = 0 o usar un mapa local->online
+                players.Add(new GameResultUploader.PlayerResult
+                {
+                    acc_id = AccountSession.Instance.AccId, // simplificado: todos la misma cuenta
+                    kills  = p.score,
+                    deaths = 0,
+                    is_host = 1 // por ahora
+                });
+            }
+        }
+        else if (onlinePlayers.Count > 0)
+        {
+            foreach (var p in onlinePlayers)
+            {
+                players.Add(new GameResultUploader.PlayerResult
+                {
+                    acc_id = AccountSession.Instance.AccId, // luego puedes mapear cada player->acc
+                    kills  = p.score,
+                    deaths = 0,
+                    is_host = (p.playerInput != null && p.playerInput.playerIndex == 0) ? 1 : 0
+                });
+            }
+        }
+
+        // 3) determinar ganador: el primero de la lista ordenada
+        int winnerAccId = AccountSession.Instance.AccId;
+
+        yield return resultUploader.SendResults(winnerAccId, players);
+    }

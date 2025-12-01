@@ -29,7 +29,7 @@ public class TimerLocal : MonoBehaviour
             TryStartGame();
         }
 
-        //Actualizar temporizador si est� en marcha
+        //Actualizar temporizador si est en marcha
         if (counting)
         {
             remainingTime -=Time.deltaTime;
