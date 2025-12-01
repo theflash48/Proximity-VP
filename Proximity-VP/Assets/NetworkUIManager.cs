@@ -2,50 +2,54 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using UnityEngine.SceneManagement;
 
 public class NetworkUIManager : MonoBehaviour
 {
     [Header("UI Referencias")]
-    [Tooltip("Panel que contiene los botones (se oculta al conectar)")]
     public GameObject menuPanel;
-    
-    [Tooltip("Botón para iniciar como Host (servidor + jugador)")]
     public Button hostButton;
-    
-    [Tooltip("Botón para iniciar como Cliente")]
     public Button clientButton;
-    
-    [Tooltip("Input field para la IP del servidor (opcional)")]
     public TMP_InputField ipInputField;
-    
-    [Tooltip("Texto para mostrar estado de conexión")]
     public TextMeshProUGUI statusText;
 
     [Header("Configuración")]
-    [Tooltip("IP por defecto si no se especifica otra")]
     public string defaultIP = "127.0.0.1";
-    
-    [Tooltip("Puerto de conexión")]
     public ushort port = 7777;
+
+    [Header("Escenas")]
+    public string gameSceneName = "GameOnline";
 
     void Start()
     {
         if (hostButton != null)
-        {
             hostButton.onClick.AddListener(StartHost);
-        }
 
         if (clientButton != null)
-        {
             clientButton.onClick.AddListener(StartClient);
-        }
 
         if (ipInputField != null)
-        {
             ipInputField.text = defaultIP;
-        }
 
         UpdateStatus("Esperando conexión...");
+
+        if (NetworkManager.Singleton != null)
+        {
+            // Por si quieres mostrar algo al conectar/desconectar
+            NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnect;
+        }
+    }
+
+    void OnDestroy()
+    {
+        if (hostButton != null)
+            hostButton.onClick.RemoveListener(StartHost);
+
+        if (clientButton != null)
+            clientButton.onClick.RemoveListener(StartClient);
+
+        if (NetworkManager.Singleton != null)
+            NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnect;
     }
 
     public void StartHost()
@@ -61,13 +65,18 @@ public class NetworkUIManager : MonoBehaviour
 
         SetupTransport();
 
-        // Iniciar como host
         bool success = NetworkManager.Singleton.StartHost();
 
         if (success)
         {
             UpdateStatus($"Host iniciado en {GetLocalIP()}:{port}");
             HideMenu();
+
+            // EL HOST CARGA LA ESCENA, LOS CLIENTES LA SEGUIRÁN
+            NetworkManager.Singleton.SceneManager.LoadScene(
+                gameSceneName, 
+                LoadSceneMode.Single
+            );
         }
         else
         {
@@ -88,30 +97,32 @@ public class NetworkUIManager : MonoBehaviour
 
         SetupTransport();
 
-        // Iniciar como cliente
         bool success = NetworkManager.Singleton.StartClient();
 
         if (success)
         {
             UpdateStatus($"Conectando a {GetTargetIP()}:{port}...");
             HideMenu();
+            // el cliente solo espera; cuando el host cargue GameOnline,
+            // Netcode lo llevará también a esa escena
         }
         else
         {
             UpdateStatus("ERROR: No se pudo conectar");
+            ShowMenu();
         }
     }
 
     void SetupTransport()
     {
         var transport = NetworkManager.Singleton.GetComponent<Unity.Netcode.Transports.UTP.UnityTransport>();
-        
+
         if (transport != null)
         {
             string targetIP = GetTargetIP();
             transport.ConnectionData.Address = targetIP;
             transport.ConnectionData.Port = port;
-            
+
             Debug.Log($"Transporte configurado: {targetIP}:{port}");
         }
     }
@@ -119,9 +130,8 @@ public class NetworkUIManager : MonoBehaviour
     string GetTargetIP()
     {
         if (ipInputField != null && !string.IsNullOrEmpty(ipInputField.text))
-        {
             return ipInputField.text;
-        }
+
         return defaultIP;
     }
 
@@ -133,40 +143,41 @@ public class NetworkUIManager : MonoBehaviour
             foreach (var ip in host.AddressList)
             {
                 if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
-                {
                     return ip.ToString();
-                }
             }
         }
-        catch
-        {
-            return "127.0.0.1";
-        }
+        catch {}
+
         return "127.0.0.1";
     }
 
     void UpdateStatus(string message)
     {
         if (statusText != null)
-        {
             statusText.text = message;
-        }
+
         Debug.Log($"[NetworkUI] {message}");
     }
 
     void HideMenu()
     {
         if (menuPanel != null)
-        {
             menuPanel.SetActive(false);
-        }
     }
 
     void ShowMenu()
     {
         if (menuPanel != null)
-        {
             menuPanel.SetActive(true);
+    }
+
+    void OnClientDisconnect(ulong clientId)
+    {
+        if (NetworkManager.Singleton != null && !NetworkManager.Singleton.IsServer)
+        {
+            // si somos cliente y nos echan, volvemos al menú de Matches
+            UpdateStatus("Desconectado del servidor");
+            ShowMenu();
         }
     }
 
@@ -174,32 +185,10 @@ public class NetworkUIManager : MonoBehaviour
     {
         if (NetworkManager.Singleton != null)
         {
-            if (NetworkManager.Singleton.IsHost)
-            {
-                NetworkManager.Singleton.Shutdown();
-                UpdateStatus("Host detenido");
-            }
-            else if (NetworkManager.Singleton.IsClient)
-            {
-                NetworkManager.Singleton.Shutdown();
-                UpdateStatus("Desconectado del servidor");
-            }
+            NetworkManager.Singleton.Shutdown();
+            UpdateStatus("Desconectado");
         }
 
         ShowMenu();
-    }
-
-    void OnDestroy()
-    {
-        // Limpiar listeners
-        if (hostButton != null)
-        {
-            hostButton.onClick.RemoveListener(StartHost);
-        }
-
-        if (clientButton != null)
-        {
-            clientButton.onClick.RemoveListener(StartClient);
-        }
     }
 }
