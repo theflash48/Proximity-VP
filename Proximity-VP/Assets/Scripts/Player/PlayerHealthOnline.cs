@@ -1,69 +1,54 @@
-using Unity.Netcode;
 using System.Collections;
+using Unity.Netcode;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class PlayerHealthOnline : NetworkBehaviour
 {
+    [Header("Health Settings")]
     public int maxLives = 2;
-    
-private NetworkVariable<int> currentLives = new NetworkVariable<int>(
-    2,
-    NetworkVariableReadPermission.Everyone,
-    NetworkVariableWritePermission.Server
-);
+    public NetworkVariable<int> currentLives = new NetworkVariable<int>();
 
-// Método público para obtener las vidas actuales
-public int GetCurrentLives()
-{
-    return currentLives.Value;
-}
-    
+    [Header("Respawn Settings")]
     public float respawnDelay = 3f;
-    private PlayerControllerLocal playerControllerLocal;
-    private Rigidbody rb;
-    private Collider playerCollider;
-    public Image fadeImage;
-    public float fadeDuration = 1f;
-    public GameObject deathEffect;
-    private bool isDead = false;
 
-    void Start()
+    public TimerLocal timer;
+
+    private Renderer meshRenderer;
+    private Collider col;
+
+    void Awake()
     {
-        // Solo el servidor inicializa las vidas
+        meshRenderer = GetComponent<Renderer>();
+        col = GetComponent<Collider>();
+    }
+
+    public override void OnNetworkSpawn()
+    {
         if (IsServer)
         {
             currentLives.Value = maxLives;
         }
-        
-        playerControllerLocal = GetComponent<PlayerControllerLocal>();
-        rb = GetComponent<Rigidbody>();
-        playerCollider = GetComponent<Collider>();
-        
-        if (fadeImage != null)
-        {
-            Color c = fadeImage.color;
-            c.a = 0f;
-            fadeImage.color = c;
-            fadeImage.gameObject.SetActive(false);
-        }
-        
-        if (SpawnManager.Instance != null)
-        {
-            SpawnManager.Instance.RegisterPlayer(gameObject);
-        }
     }
 
-
-    public void TakeDamage()
+    [ServerRpc(RequireOwnership = false)]
+    public void TakeDamageServerRpc()
     {
-        if (isDead) return;
-        
-        // Solo el servidor puede aplicar daño
+        TakeDamage();
+    }
+
+    // Solo la lógica del servidor
+    private void TakeDamage()
+    {
         if (!IsServer) return;
 
+        if (timer != null)
+        {
+            if (!timer.gameStarted || timer.remainingTime <= 0)
+                return;
+        }
+
         currentLives.Value--;
-        Debug.Log(gameObject.name + " vidas restantes: " + currentLives.Value);
+        Debug.Log(gameObject.name + " vidas restantes (online): " + currentLives.Value);
 
         if (currentLives.Value <= 0)
         {
@@ -71,186 +56,78 @@ public int GetCurrentLives()
         }
         else
         {
-            DamageFlashClientRpc();
+            StartCoroutine(RespawnCoroutine());
         }
     }
 
-    void Die()
+    [ServerRpc(RequireOwnership = false)]
+    public void ResetLivesServerRpc()
     {
-        // Solo el servidor ejecuta la muerte
-        if (!IsServer) return;
-
-        isDead = true;
-        Debug.Log(gameObject.name + " ha muerto!");
-
-        // Ejecutar efectos en todos los clientes
-        DieClientRpc();
-    }
-
-    [ClientRpc]
-    private void DieClientRpc()
-    {
-        if (deathEffect != null)
-        {
-            Instantiate(deathEffect, transform.position, Quaternion.identity);
-        }
-
-        if (IsOwner && playerControllerLocal != null)
-        {
-            playerControllerLocal.enabled = false;
-        }
-        
-        if (rb != null)
-        {
-            rb.linearVelocity = Vector3.zero;
-            rb.angularVelocity = Vector3.zero;
-        }
-
-        MeshRenderer meshRenderer = GetComponent<MeshRenderer>();
-        if (meshRenderer != null)
-        {
-            meshRenderer.enabled = false;
-        }
-
-        if (playerCollider != null)
-        {
-            playerCollider.enabled = false;
-        }
-
-        // Solo el dueño inicia la secuencia de CARMTNA
-        if (IsOwner)
-        {
-            StartCoroutine(DeathSequence());
-        }
-    }
-
-    IEnumerator DeathSequence()
-    {
-        // Fade a CARTMAN
-        if (fadeImage != null)
-        {
-            fadeImage.gameObject.SetActive(true);
-            float elapsedTime = 0f;
-            Color c = fadeImage.color;
-
-            while (elapsedTime < fadeDuration)
-            {
-                elapsedTime += Time.deltaTime;
-                c.a = Mathf.Lerp(0f, 1f, elapsedTime / fadeDuration);
-                fadeImage.color = c;
-                yield return null;
-            }
-
-            c.a = 1f;
-            fadeImage.color = c;
-        }
-
-        yield return new WaitForSeconds(respawnDelay - fadeDuration);
-
-        // El servidor maneja el respawn
-        if (IsServer)
-        {
-            Respawn();
-        }
-
-        if (fadeImage != null)
-        {
-            float elapsedTime = 0f;
-            Color c = fadeImage.color;
-
-            while (elapsedTime < fadeDuration)
-            {
-                elapsedTime += Time.deltaTime;
-                c.a = Mathf.Lerp(1f, 0f, elapsedTime / fadeDuration);
-                fadeImage.color = c;
-                yield return null;
-            }
-
-            c.a = 0f;
-            fadeImage.color = c;
-            fadeImage.gameObject.SetActive(false);
-        }
-    }
-
-    void Respawn()
-    {
-        // Solo el servidor puede hacer respawn
-        if (!IsServer) return;
-
         currentLives.Value = maxLives;
-        isDead = false;
+    }
 
-        // Usar el NetworkSpawnManager para respawn
-        if (NetworkSpawnManager.Instance != null)
-        {
-            NetworkObject netObj = GetComponent<NetworkObject>();
-            NetworkSpawnManager.Instance.RespawnPlayer(netObj);
-        }
-        else
-        {
-            Transform spawnPoint = null;
-            if (SpawnManager.Instance != null)
-            {
-                spawnPoint = SpawnManager.Instance.GetFarthestSpawnPoint(gameObject);
-            }
+    private void Die()
+    {
+        // aquí podrías hacer animación, etc.
+        StartCoroutine(RespawnCoroutine(true));
+    }
 
-            if (spawnPoint != null)
-            {
-                transform.position = spawnPoint.position;
-                transform.rotation = spawnPoint.rotation;
-            }
-        }
+    private IEnumerator RespawnCoroutine(bool resetLives = false)
+    {
+        // Desactivar colisión y “render”
+        col.enabled = false;
+        meshRenderer.enabled = false;
 
-        if (rb != null)
+        yield return new WaitForSeconds(respawnDelay);
+
+        // Recolocar en un spawn
+        Transform spawn = SpawnManager.Instance != null
+            ? SpawnManager.Instance.GetFarthestSpawnPoint(gameObject)
+            : null;
+
+        if (spawn != null)
         {
-            rb.linearVelocity = Vector3.zero;
-            rb.angularVelocity = Vector3.zero;
+            transform.position = spawn.position;
+            transform.rotation = spawn.rotation;
         }
 
-        ReactivatePlayerClientRpc();
+        if (resetLives)
+        {
+            currentLives.Value = maxLives;
+        }
 
-        Debug.Log(gameObject.name + " ha respawneado!");
+        // Reactivar
+        col.enabled = true;
+        meshRenderer.enabled = true;
+
+        // Parpadeo de invulnerabilidad (en clientes) 
+        BlinkClientRpc();
     }
 
     [ClientRpc]
-    private void ReactivatePlayerClientRpc()
+    void BlinkClientRpc()
     {
-        if (playerControllerLocal != null && IsOwner)
-        {
-            playerControllerLocal.enabled = true;
-        }
-        if (playerCollider != null)
-        {
-            playerCollider.enabled = true;
-        }
+        StartCoroutine(BlinkCoroutine());
     }
 
-    [ClientRpc]
-    private void DamageFlashClientRpc()
+    IEnumerator BlinkCoroutine()
     {
-        StartCoroutine(DamageFlash());
+        if (meshRenderer == null) yield break;
+
+        for (int i = 0; i < 10; i++)
+        {
+            meshRenderer.enabled = !meshRenderer.enabled;
+            yield return new WaitForSeconds(0.1f);
+        }
+
+        meshRenderer.enabled = true;
     }
 
-    IEnumerator DamageFlash()
-    {
-        MeshRenderer meshRenderer = GetComponent<MeshRenderer>();
-        if (meshRenderer != null)
-        {
-            for (int i = 0; i < 3; i++)
-            {
-                meshRenderer.enabled = false;
-                yield return new WaitForSeconds(0.1f);
-                meshRenderer.enabled = true;
-                yield return new WaitForSeconds(0.1f);
-            }
-        }
-    }
-    //Comentado por PABLO, hablado por el grupo. Esta dando fallos y no se si se va a usar
-    /*void OnDestroy()
+    void OnDestroy()
     {
         if (SpawnManager.Instance != null)
         {
             SpawnManager.Instance.UnregisterPlayer(gameObject);
         }
-    }*/
+    }
 }

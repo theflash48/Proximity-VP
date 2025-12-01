@@ -18,6 +18,9 @@ public class PlayerControllerOnline : NetworkBehaviour
     public float groundCheckDistance = 0.1f;
     public LayerMask groundLayer = 1;
     public int score = 0;
+    public delegate void OnScoreUPOnline();
+public static event OnScoreUPOnline onScoreUPOnline;
+
 
     Rigidbody rb;
     MeshRenderer meshRenderer;
@@ -66,6 +69,20 @@ public class PlayerControllerOnline : NetworkBehaviour
         lineRender.positionCount = 2;
     }
 
+    public void ScoreUP()
+{
+    score++;
+
+    var hud = GetComponent<PlayerHUD>();
+    if (hud != null)
+    {
+        hud._fUpdateScore(score);
+    }
+
+    onScoreUPOnline?.Invoke();
+}
+
+
     // NUEVO: Solo el dueño puede controlar este jugador
     public override void OnNetworkSpawn()
     {
@@ -99,23 +116,30 @@ public class PlayerControllerOnline : NetworkBehaviour
         lookInput = value.Get<Vector2>();
     }
 
-    public void OnShoot(InputValue value)
+public void OnShoot(InputValue value)
+{
+    // Solo el dueño puede disparar
+    if (!IsOwner) return;
+    if (shootScript == null || playerCamera == null) return;
+
+    Debug.Log("Disparando!");
+
+    bool hitPlayer = shootScript.ShootBullet(playerCamera);
+    if (hitPlayer)
     {
-        // Solo el dueño puede disparar
-        if (!IsOwner) return;
+        ScoreUP();
+    }
 
-        Debug.Log("Disparando!");
-
-        // Sistema de disparo con raycast
-        shootScript.ShootBullet(playerCamera);
-        
+    if (lineRender != null && firingPoint != null)
+    {
         lineRender.SetPosition(0, firingPoint.transform.position);
         lineRender.SetPosition(1, firingPoint.transform.position + playerCamera.transform.forward * 100);
-        
-        isVisible = true;
-        
-        timeToInvisible = timeVisible;
     }
+
+    isVisible = true;
+    timeToInvisible = timeVisible;
+}
+
 
     private void Update()
     {

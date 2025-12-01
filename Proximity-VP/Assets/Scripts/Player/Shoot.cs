@@ -3,51 +3,63 @@ using UnityEngine.EventSystems;
 
 public class Shoot : MonoBehaviour
 {
-    // Ya no necesitamos spawnInicial ni instanciar la bala en Start
-    // public GameObject spawnInicial;
     public GameObject firingPoint;
-    private PlayerControllerLocal pcl;
-    private PlayerControllerOnline pco;
-    private bool isOnline = false;
-    
+
+    // true si este objeto es un Player online
+    private bool isOnline;
+
     void Start()
     {
-        if (gameObject.GetComponent<PlayerControllerLocal>())
-        {
-            isOnline = false;
-            pcl = gameObject.GetComponent<PlayerControllerLocal>();
-        }
-        if (gameObject.GetComponent<PlayerControllerOnline>())
-        {
-            isOnline = true;
-            pco = gameObject.GetComponent<PlayerControllerOnline>();
-        }
+        isOnline = GetComponent<PlayerControllerOnline>() != null;
     }
 
+    /// <summary>
+    /// Devuelve true si ha golpeado a un jugador (para sumar kill).
+    /// </summary>
     public bool ShootBullet(GameObject playerCamera)
     {
+        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+            return false;
+
         if (firingPoint == null)
         {
-            Debug.LogWarning("FiringPoint no encontrado en Shoot!");
+            Debug.LogWarning("Shoot: firingPoint no asignado.");
             return false;
         }
-            
+
         RaycastHit hit;
-        if (Physics.Raycast(firingPoint.transform.position, playerCamera.transform.forward, out hit, 100f))
+        if (Physics.Raycast(firingPoint.transform.position,
+                            playerCamera.transform.forward,
+                            out hit, 100f))
         {
             Debug.Log("Objeto golpeado: " + hit.transform.name + " en posición: " + hit.point);
-            if (hit.transform.gameObject.CompareTag("Player"))
+
+            if (!hit.transform.CompareTag("Player"))
+                return false;
+
+            if (!isOnline)
             {
-                bool local = false;
-                PlayerHealthLocal pc_hit = hit.transform.gameObject.GetComponent<PlayerHealthLocal>();
-                pc_hit.TakeDamage();
-                
-                if (pc_hit != null && pc_hit.currentLives <= 0)
+                // COUCH PARTY
+                var phLocal = hit.transform.GetComponent<PlayerHealthLocal>();
+                if (phLocal != null)
                 {
-                    return true;
+                    phLocal.TakeDamage();
+                    if (phLocal.currentLives <= 0)
+                        return true; // kill
+                }
+            }
+            else
+            {
+                // ONLINE
+                var phOnline = hit.transform.GetComponent<PlayerHealthOnline>();
+                if (phOnline != null)
+                {
+                    phOnline.TakeDamageServerRpc(); // el servidor aplica el daño
+                    return true;                    // contamos hit para el score
                 }
             }
         }
+
         return false;
     }
 }

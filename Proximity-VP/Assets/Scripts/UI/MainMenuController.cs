@@ -41,7 +41,7 @@ public class MainMenuController : MonoBehaviour
     public void GoToOnline()
     {
         gmManager.conection = GameModeManager.conectionType.online;
-        sceneController.ChangeScene("OnlineGame");
+        sceneController.ChangeScene("Login");
     }
 
     public void GoToExit()

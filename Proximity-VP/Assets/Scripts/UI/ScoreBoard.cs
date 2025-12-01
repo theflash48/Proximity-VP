@@ -1,213 +1,292 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 
 public class ScoreBoard : MonoBehaviour
 {
+    // Listas de jugadores
     public List<PlayerControllerLocal> localPlayers = new List<PlayerControllerLocal>();
-    List<PlayerControllerOnline> onlinePlayers = new List<PlayerControllerOnline>();
+    public List<PlayerControllerOnline> onlinePlayers = new List<PlayerControllerOnline>();
 
+    // Orden original (Player 1, 2, 3, 4...)
     public List<GameObject> playerOrder = new List<GameObject>();
 
+    [Header("UI")]
     public GameObject endScreen;
-    public GameObject[] scoreBanners;
+    public GameObject[] scoreBanners;   // 0: 1st, 1: 2nd, 2: 3rd, 3: 4th/otros
     public GameObject scorePanel;
 
-    private void OnEnable()
+    [Header("OPCIONAL: envío BD")]
+    public GameResultUploader resultUploader; // déjalo null si no usas BD
+    public int currentMapId = 1;
+
+    void OnEnable()
     {
         TimerLocal.onTryStartGame += LocatePlayers;
-        PlayerControllerLocal.onScoreUP += UpdateScores;
-        TimerLocal.onEndGame += PrintScores;
+        TimerLocal.onEndGame      += PrintScores;
+        PlayerControllerLocal.onScoreUP       += UpdateScores;
+        PlayerControllerOnline.onScoreUPOnline += UpdateScores;
+    }
+
+    void OnDisable()
+    {
+        TimerLocal.onTryStartGame -= LocatePlayers;
+        TimerLocal.onEndGame      -= PrintScores;
+        PlayerControllerLocal.onScoreUP       -= UpdateScores;
+        PlayerControllerOnline.onScoreUPOnline -= UpdateScores;
     }
 
     void Start()
     {
-        endScreen.SetActive(false);
+        if (endScreen != null)
+            endScreen.SetActive(false);
     }
 
+    /// <summary>
+    /// Localiza jugadores cuando empieza la partida
+    /// </summary>
     private void LocatePlayers()
     {
-        GameObject[] players = GameObject.FindGameObjectsWithTag("Player");
-        for (int i = 0; i < players.Length; i++) {
-            playerOrder.Add(players[i]);
-            Debug.Log(i + " added");
-        }
+        localPlayers.Clear();
+        onlinePlayers.Clear();
+        playerOrder.Clear();
 
-        if (players[0].GetComponent<PlayerControllerLocal>() != null)
+        GameObject[] players = GameObject.FindGameObjectsWithTag("Player");
+
+        foreach (var p in players)
+            playerOrder.Add(p);
+
+        if (players.Length == 0)
         {
-            for (int i = 0; i < players.Length; i++)
-            {
-                localPlayers.Add(players[i].GetComponent<PlayerControllerLocal>());
-            }
-            UpdateScores();
-        }
-        else if (players[0].GetComponent<PlayerControllerOnline>() != null)
-        {
-            for (int i = 0; i < players.Length; i++)
-            {
-                onlinePlayers.Add(players[i].GetComponent<PlayerControllerOnline>());
-            }
-            UpdateScores();
-        }
-        else
-        {
-            Debug.LogError("There are no players in the game");
+            Debug.LogError("ScoreBoard: no hay jugadores en la escena.");
             return;
         }
 
+        // Detectar tipo de partida por el primer jugador
+        if (players[0].GetComponent<PlayerControllerLocal>() != null)
+        {
+            foreach (var p in players)
+            {
+                var pc = p.GetComponent<PlayerControllerLocal>();
+                if (pc != null)
+                    localPlayers.Add(pc);
+            }
+        }
+        else if (players[0].GetComponent<PlayerControllerOnline>() != null)
+        {
+            foreach (var p in players)
+            {
+                var pc = p.GetComponent<PlayerControllerOnline>();
+                if (pc != null)
+                    onlinePlayers.Add(pc);
+            }
+        }
+        else
+        {
+            Debug.LogError("ScoreBoard: los jugadores no tienen ni PlayerControllerLocal ni PlayerControllerOnline.");
+            return;
+        }
+
+        UpdateScores();
     }
 
-    private void OnDisable()
-    {
-        TimerLocal.onTryStartGame -= LocatePlayers;
-        PlayerControllerLocal.onScoreUP -= UpdateScores;
-        TimerLocal.onEndGame -= PrintScores;
-    }
-
+    /// <summary>
+    /// Actualiza las posiciones (1st, 2nd...) en el HUD durante la partida
+    /// </summary>
     void UpdateScores()
     {
+        // LOCAL
         if (localPlayers.Count > 0)
         {
-            localPlayers = localPlayers.OrderByDescending(lP => lP.score).ToList();
+            localPlayers = localPlayers.OrderByDescending(p => p.score).ToList();
 
-            for (int i = 0; localPlayers.Count > 0; i++)
+            for (int i = 0; i < localPlayers.Count; i++)
             {
+                var hud = localPlayers[i].GetComponent<PlayerHUD>();
+                if (hud == null) continue;
+
                 switch (i)
                 {
-                    case 0:
-                        localPlayers[0].gameObject.GetComponent<PlayerHUD>()._cPlace.text = "1st";
-                        break;
-                    case 1:
-                        localPlayers[1].gameObject.GetComponent<PlayerHUD>()._cPlace.text = "2nd";
-                        break;
-                    case 2:
-                        localPlayers[2].gameObject.GetComponent<PlayerHUD>()._cPlace.text = "3rd";
-                        break;
-                    case 3:
-                        localPlayers[3].gameObject.GetComponent<PlayerHUD>()._cPlace.text = "4th";
-                        break;
+                    case 0: hud._cPlace.text = "1st"; break;
+                    case 1: hud._cPlace.text = "2nd"; break;
+                    case 2: hud._cPlace.text = "3rd"; break;
+                    case 3: hud._cPlace.text = "4th"; break;
+                    default: hud._cPlace.text = (i + 1) + "th"; break;
                 }
             }
-            
-                
-        } else if (onlinePlayers.Count > 0)
+        }
+        // ONLINE
+        else if (onlinePlayers.Count > 0)
         {
-            onlinePlayers = onlinePlayers.OrderByDescending(oP => oP.score).ToList();
+            onlinePlayers = onlinePlayers.OrderByDescending(p => p.score).ToList();
 
             for (int i = 0; i < onlinePlayers.Count; i++)
             {
+                var hud = onlinePlayers[i].GetComponent<PlayerHUD>();
+                if (hud == null) continue;
+
                 switch (i)
                 {
-                    case 0:
-                        onlinePlayers[0].gameObject.GetComponent<PlayerHUD>()._cPlace.text = "1st";
-                        break;
-                    case 1:
-                        onlinePlayers[1].gameObject.GetComponent<PlayerHUD>()._cPlace.text = "2nd";
-                        break; 
-                    case 2:
-                        onlinePlayers[2].gameObject.GetComponent<PlayerHUD>()._cPlace.text = "3rd";
-                        break;
-                    case 3:
-                        onlinePlayers[3].gameObject.GetComponent<PlayerHUD>()._cPlace.text = "4th";
-                        break;
+                    case 0: hud._cPlace.text = "1st"; break;
+                    case 1: hud._cPlace.text = "2nd"; break;
+                    case 2: hud._cPlace.text = "3rd"; break;
+                    case 3: hud._cPlace.text = "4th"; break;
+                    default: hud._cPlace.text = (i + 1) + "th"; break;
                 }
             }
-            
         }
     }
 
-    int playersName;
+    int playersNameIndex;
+
+    /// <summary>
+    /// Construye los banners finales
+    /// </summary>
     public void PrintScores()
     {
-        endScreen.SetActive(true);
-        if (localPlayers[0].GetComponent<PlayerControllerLocal>() != null)
+        if (endScreen != null)
+            endScreen.SetActive(true);
+
+        // Limpiar panel
+        foreach (Transform child in scorePanel.transform)
+            Destroy(child.gameObject);
+
+        // LOCAL
+        if (localPlayers.Count > 0 && localPlayers[0] != null)
         {
+            localPlayers = localPlayers.OrderByDescending(p => p.score).ToList();
+
             for (int i = 0; i < localPlayers.Count; i++)
             {
                 GameObject ban;
                 if (i >= 3)
-                    ban = Instantiate(scoreBanners[3]);
+                    ban = Object.Instantiate(scoreBanners[3]);
                 else
-                    ban = Instantiate(scoreBanners[i]);
-                ban.transform.SetParent(scorePanel.transform);
-                switch (i)
+                    ban = Object.Instantiate(scoreBanners[i]);
+
+                ban.transform.SetParent(scorePanel.transform, false);
+
+                // Buscar qué "Player X" era (por score)
+                for (int b = 0; b < playerOrder.Count; b++)
                 {
-                    case 0:
-                        
-                        for (int b = 0; b < playerOrder.Count; b++) {
-                            if (localPlayers[0].score == playerOrder[b].GetComponent<PlayerControllerLocal>().score)
-                                playersName = b + 1;
-                        }
-                        ban.GetComponent<ScoreBanner>().UpdateBanner("1st", "Player " + playersName.ToString(), localPlayers[0].score.ToString() + " Kills");
+                    var pc = playerOrder[b].GetComponent<PlayerControllerLocal>();
+                    if (pc != null && pc.score == localPlayers[i].score)
+                    {
+                        playersNameIndex = b + 1;
                         break;
-                    case 1:
-                        for (int b = 0; b < playerOrder.Count; b++) {
-                            if (localPlayers[1].score == playerOrder[b].GetComponent<PlayerControllerLocal>().score)
-                                playersName = b + 1;
-                        }
-                        ban.GetComponent<ScoreBanner>().UpdateBanner("2nd", "Player " + playersName.ToString(), localPlayers[1].score.ToString() + " Kills");
-                        break;
-                    case 2:
-                        for (int b = 0; b < playerOrder.Count; b++) {
-                            if (localPlayers[2].score == playerOrder[b].GetComponent<PlayerControllerLocal>().score)
-                                playersName = b + 1;
-                        }
-                        ban.GetComponent<ScoreBanner>().UpdateBanner("3rd", "Player " + playersName.ToString(), localPlayers[2].score.ToString() + " Kills");
-                        break;
-                    case 3:
-                        for (int b = 0; b < playerOrder.Count; b++) {
-                            if (localPlayers[3].score == playerOrder[b].GetComponent<PlayerControllerLocal>().score)
-                                playersName = b + 1;
-                        }
-                        ban.GetComponent<ScoreBanner>().UpdateBanner("2nd", "Player " + playersName.ToString(), localPlayers[3].score.ToString() + " Kills");
-                        break;
+                    }
                 }
+
+                string posStr = (i == 0) ? "1st" :
+                                (i == 1) ? "2nd" :
+                                (i == 2) ? "3rd" :
+                                "4th";
+
+                ban.GetComponent<ScoreBanner>().UpdateBanner(
+                    posStr,
+                    "Player " + playersNameIndex,
+                    localPlayers[i].score + " Kills"
+                );
             }
         }
-        else if (onlinePlayers[0].GetComponent<PlayerControllerOnline>() != null)
+        // ONLINE
+        else if (onlinePlayers.Count > 0 && onlinePlayers[0] != null)
         {
+            onlinePlayers = onlinePlayers.OrderByDescending(p => p.score).ToList();
+
             for (int i = 0; i < onlinePlayers.Count; i++)
             {
-                GameObject ban = Instantiate(scoreBanners[0]);
-                ban.transform.SetParent(scorePanel.transform);
-                switch (i)
+                GameObject ban;
+                if (i >= 3)
+                    ban = Object.Instantiate(scoreBanners[3]);
+                else
+                    ban = Object.Instantiate(scoreBanners[i]);
+
+                ban.transform.SetParent(scorePanel.transform, false);
+
+                for (int b = 0; b < playerOrder.Count; b++)
                 {
-                    case 0:
-                        
-                        for (int b = 0; b < playerOrder.Count; b++) {
-                            if (onlinePlayers[0].score == playerOrder[b].GetComponent<PlayerControllerOnline>().score)
-                                playersName = b + 1;
-                        }
-                        ban.GetComponent<ScoreBanner>().UpdateBanner("1st", "Player " + playersName.ToString(), onlinePlayers[0].score.ToString() + " Kills");
+                    var pc = playerOrder[b].GetComponent<PlayerControllerOnline>();
+                    if (pc != null && pc.score == onlinePlayers[i].score)
+                    {
+                        playersNameIndex = b + 1;
                         break;
-                    case 1:
-                        for (int b = 0; b < playerOrder.Count; b++) {
-                            if (onlinePlayers[1].score == playerOrder[b].GetComponent<PlayerControllerOnline>().score)
-                                playersName = b + 1;
-                        }
-                        ban.GetComponent<ScoreBanner>().UpdateBanner("2nd", "Player " + playersName.ToString(), onlinePlayers[1].score.ToString() + " Kills");
-                        break;
-                    case 2:
-                        for (int b = 0; b < playerOrder.Count; b++) {
-                            if (onlinePlayers[2].score == playerOrder[b].GetComponent<PlayerControllerOnline>().score)
-                                playersName = b + 1;
-                        }
-                        ban.GetComponent<ScoreBanner>().UpdateBanner("3rd", "Player " + playersName.ToString(), onlinePlayers[2].score.ToString() + " Kills");
-                        break;
-                    case 3:
-                        for (int b = 0; b < playerOrder.Count; b++) {
-                            if (onlinePlayers[3].score == playerOrder[b].GetComponent<PlayerControllerOnline>().score)
-                                playersName = b + 1;
-                        }
-                        ban.GetComponent<ScoreBanner>().UpdateBanner("2nd", "Player " + playersName.ToString(), onlinePlayers[3].score.ToString() + " Kills");
-                        break;
+                    }
                 }
+
+                string posStr = (i == 0) ? "1st" :
+                                (i == 1) ? "2nd" :
+                                (i == 2) ? "3rd" :
+                                "4th";
+
+                ban.GetComponent<ScoreBanner>().UpdateBanner(
+                    posStr,
+                    "Player " + playersNameIndex,
+                    onlinePlayers[i].score + " Kills"
+                );
             }
+        }
+
+        // Enviar resultados a BD (opcional)
+        var gm = FindObjectOfType<GameModeManager>();
+        if (gm != null &&
+            gm.conection == GameModeManager.conectionType.online &&
+            AccountSession.Instance != null &&
+            AccountSession.Instance.IsLoggedIn &&
+            resultUploader != null)
+        {
+            StartCoroutine(SendResultsCoroutine());
         }
     }
 
+    IEnumerator SendResultsCoroutine()
+    {
+        // 1) crear partida en servidor si aún no existe
+        if (resultUploader.CurrentGameId <= 0)
+        {
+            int totalPlayers = localPlayers.Count > 0 ? localPlayers.Count : onlinePlayers.Count;
+            yield return resultUploader.StartGameOnServer(totalPlayers, currentMapId);
+        }
+
+        // 2) preparar datos
+        List<GameResultUploader.PlayerResult> players = new List<GameResultUploader.PlayerResult>();
+
+        if (localPlayers.Count > 0)
+        {
+            foreach (var p in localPlayers)
+            {
+                players.Add(new GameResultUploader.PlayerResult
+                {
+                    acc_id = AccountSession.Instance.AccId,
+                    kills  = p.score,
+                    deaths = 0,
+                    is_host = 1
+                });
+            }
+        }
+        else if (onlinePlayers.Count > 0)
+        {
+            for (int i = 0; i < onlinePlayers.Count; i++)
+            {
+                var p = onlinePlayers[i];
+                players.Add(new GameResultUploader.PlayerResult
+                {
+                    acc_id = AccountSession.Instance.AccId, // simplificado
+                    kills  = p.score,
+                    deaths = 0,
+                    is_host = (i == 0) ? 1 : 0      // host = primer jugador
+                });
+            }
+        }
+
+        int winnerAccId = AccountSession.Instance.AccId;
+
+        yield return resultUploader.SendResults(winnerAccId, players);
+    }
+
+    // Botones UI
     public void ReloadScene()
     {
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
@@ -218,67 +297,3 @@ public class ScoreBoard : MonoBehaviour
         SceneManager.LoadScene("MainMenu");
     }
 }
-
-
-// CODIGO IKER PERDON TIM
-
-    public GameResultUploader resultUploader; // asignar en el Inspector
-    public int currentMapId = 1;              // o el que toque
-
-    public void PrintScores()
-    {
-        endScreen.SetActive(true);
-        var gameMode = FindObjectOfType<GameModeManager>();
-        if (gameMode != null && gameMode.conection == GameModeManager.conectionType.online &&
-            AccountSession.Instance != null && AccountSession.Instance.IsLoggedIn &&
-            resultUploader != null)
-        {
-            StartCoroutine(SendResultsCoroutine());
-        }
-    }
-
-    IEnumerator SendResultsCoroutine()
-    {
-        // 1) si no se ha creado la partida en el server aún, la creamos
-        if (resultUploader.CurrentGameId <= 0)
-        {
-            int totalPlayers = localPlayers.Count > 0 ? localPlayers.Count : onlinePlayers.Count;
-            yield return resultUploader.StartGameOnServer(totalPlayers, currentMapId);
-        }
-
-        // 2) montamos los datos de cada jugador
-        List<GameResultUploader.PlayerResult> players = new List<GameResultUploader.PlayerResult>();
-
-        if (localPlayers.Count > 0)
-        {
-            foreach (var p in localPlayers)
-            {
-                // si no hay login, podemos mandar acc_id = 0 o usar un mapa local->online
-                players.Add(new GameResultUploader.PlayerResult
-                {
-                    acc_id = AccountSession.Instance.AccId, // simplificado: todos la misma cuenta
-                    kills  = p.score,
-                    deaths = 0,
-                    is_host = 1 // por ahora
-                });
-            }
-        }
-        else if (onlinePlayers.Count > 0)
-        {
-            foreach (var p in onlinePlayers)
-            {
-                players.Add(new GameResultUploader.PlayerResult
-                {
-                    acc_id = AccountSession.Instance.AccId, // luego puedes mapear cada player->acc
-                    kills  = p.score,
-                    deaths = 0,
-                    is_host = (p.playerInput != null && p.playerInput.playerIndex == 0) ? 1 : 0
-                });
-            }
-        }
-
-        // 3) determinar ganador: el primero de la lista ordenada
-        int winnerAccId = AccountSession.Instance.AccId;
-
-        yield return resultUploader.SendResults(winnerAccId, players);
-    }
