@@ -2,57 +2,67 @@ using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>
-/// Maneja el spawn automático de jugadores en red cuando se conectan.
-/// Usa el SpawnManager existente para determinar el mejor punto de spawn.
+/// Spawnea jugadores al entrar en la escena online.
+/// Host = servidor, clientes se conectan y se instancia un PlayerOnline para cada uno.
 /// </summary>
 public class NetworkSpawnManager : NetworkBehaviour
 {
     public static NetworkSpawnManager Instance;
 
     [Header("Player Settings")]
-    [Tooltip("Prefab del jugador que se spawneará (debe estar en Network Prefabs del NetworkManager)")]
+    [Tooltip("Prefab del jugador online (con NetworkObject)")]
     public GameObject playerPrefab;
 
     void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
+        if (Instance == null) Instance = this;
+        else Destroy(gameObject);
     }
 
+    //-------------------------------------------------------------------
+    // CUANDO ESTA ESCENA APARECE, SE SPAWNEA UN PLAYER PARA CADA CLIENTE
+    //-------------------------------------------------------------------
     public override void OnNetworkSpawn()
     {
-        if (IsServer)
+        if (!IsServer) return;
+
+        // Para clientes que se conecten DESPUÉS
+        NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
+        NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
+
+        // Para los que YA estaban conectados antes de cargar la escena
+        foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
         {
-            NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
-            NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
+            SpawnPlayerForClient(clientId);
         }
     }
 
     public override void OnNetworkDespawn()
     {
-        if (IsServer)
-        {
-            NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnected;
-            NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnected;
-        }
+        if (!IsServer) return;
+
+        NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnected;
+        NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnected;
     }
 
+    //-------------------------------------------------------------------
+    // MANEJO DE NUEVOS CLIENTES
+    //-------------------------------------------------------------------
     private void OnClientConnected(ulong clientId)
     {
-        Debug.Log($"Cliente {clientId} conectado. Spawneando jugador...");
+        Debug.Log($"Cliente {clientId} se ha conectado. Spawneando jugador...");
         SpawnPlayerForClient(clientId);
     }
+
     private void OnClientDisconnected(ulong clientId)
     {
-        Debug.Log($"Cliente {clientId} desconectado.");
+        Debug.Log($"Cliente {clientId} se ha desconectado.");
+        // Aquí podrías destruir su PlayerObject, si quieres
     }
 
+    //-------------------------------------------------------------------
+    // MÉTODO PRINCIPAL DE SPAWN
+    //-------------------------------------------------------------------
     private void SpawnPlayerForClient(ulong clientId)
     {
         if (!IsServer)
@@ -63,82 +73,108 @@ public class NetworkSpawnManager : NetworkBehaviour
 
         if (playerPrefab == null)
         {
-            Debug.LogError("Player Prefab no asignado en NetworkSpawnManager!");
+            Debug.LogError("PlayerPrefab no asignado en NetworkSpawnManager!");
             return;
         }
 
         if (SpawnManager.Instance == null)
         {
-            Debug.LogError("SpawnManager no encontrado en la escena!");
+            Debug.LogError("SpawnManager no encontrado en GameOnline!");
             return;
+        }
+
+        // Evitar doble spawn si ya existe uno para ese cliente
+        if (NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out var client))
+        {
+            if (client.PlayerObject != null)
+            {
+                Debug.Log($"Cliente {clientId} YA tenía PlayerObject. No se crea otro.");
+                return;
+            }
         }
 
         Transform spawnPoint = SpawnManager.Instance.GetFarthestSpawnPoint(null);
-
         if (spawnPoint == null)
         {
-            Debug.LogError("No se pudo obtener un spawn point!");
+            Debug.LogError("No se encontró spawn point!");
             return;
         }
 
+        // Crear jugador
         GameObject playerInstance = Instantiate(playerPrefab, spawnPoint.position, spawnPoint.rotation);
         SetupPlayerReferences(playerInstance);
-        NetworkObject networkObject = playerInstance.GetComponent<NetworkObject>();
 
+        // 🔥 FIX PANTALLA NEGRA (registrar jugador en SpawnManager)
+        SpawnManager.Instance.RegisterPlayer(playerInstance);
+
+        NetworkObject networkObject = playerInstance.GetComponent<NetworkObject>();
         if (networkObject == null)
         {
-            Debug.LogError("El Player Prefab no tiene un componente NetworkObject!");
+            Debug.LogError("El PlayerPrefab NO tiene NetworkObject!");
             Destroy(playerInstance);
             return;
         }
+
         networkObject.SpawnAsPlayerObject(clientId);
 
-        Debug.Log($"Jugador spawneado para cliente {clientId} en posición {spawnPoint.position}");
+        Debug.Log($"Jugador {clientId} spawneado en {spawnPoint.position}");
     }
 
+    //-------------------------------------------------------------------
+    // AJUSTE AUTOMÁTICO DEL FIRINGPOINT Y CÁMARA
+    //-------------------------------------------------------------------
     private void SetupPlayerReferences(GameObject playerInstance)
     {
-        PlayerControllerOnline playerController = playerInstance.GetComponent<PlayerControllerOnline>();
-        
-        if (playerController != null)
+        PlayerControllerOnline player = playerInstance.GetComponent<PlayerControllerOnline>();
+        if (player == null) return;
+
+        // Auto detectar cámara si no está asignada
+        if (player.cameraComponent == null)
+            player.cameraComponent = playerInstance.GetComponentInChildren<Camera>(true);
+
+        if (player.cameraComponent != null)
+            player.playerCamera = player.cameraComponent.gameObject;
+
+        // FiringPoint
+        Transform fp = playerInstance.transform.Find("FiringPoint");
+
+        if (fp == null)
         {
-            Transform firingPointTransform = playerInstance.transform.Find("FiringPoint");
-            
-            if (firingPointTransform == null)
+            if (player.playerCamera != null)
             {
-                GameObject firingPoint = new GameObject("FiringPoint");
-                firingPoint.transform.SetParent(playerController.playerCamera.transform);
-                firingPoint.transform.localPosition = Vector3.forward * 0.5f; // 0.5 metros adelante de la cámara
-                firingPoint.transform.localRotation = Quaternion.identity;
-                
-                playerController.firingPoint = firingPoint;
-                Debug.Log("FiringPoint creado automáticamente para " + playerInstance.name);
+                GameObject firing = new GameObject("FiringPoint");
+                firing.transform.SetParent(player.playerCamera.transform);
+                firing.transform.localPosition = Vector3.forward * 0.5f;
+                firing.transform.localRotation = Quaternion.identity;
+
+                player.firingPoint = firing;
+                Debug.Log("FiringPoint generado automáticamente");
             }
-            else
-            {
-                playerController.firingPoint = firingPointTransform.gameObject;
-            }
+        }
+        else
+        {
+            player.firingPoint = fp.gameObject;
         }
     }
 
+    //-------------------------------------------------------------------
+    // RESPWAN OPCIONAL DESDE EL SERVIDOR
+    //-------------------------------------------------------------------
     public void RespawnPlayer(NetworkObject playerNetworkObject)
     {
         if (!IsServer)
         {
-            Debug.LogError("Solo el servidor puede hacer respawn!");
+            Debug.LogError("Solo el servidor puede respawnear jugadores!");
             return;
         }
 
-        GameObject playerGameObject = playerNetworkObject.gameObject;
-
-        Transform spawnPoint = SpawnManager.Instance.GetFarthestSpawnPoint(playerGameObject);
-
+        Transform spawnPoint = SpawnManager.Instance.GetFarthestSpawnPoint(playerNetworkObject.gameObject);
         if (spawnPoint != null)
         {
-            playerGameObject.transform.position = spawnPoint.position;
-            playerGameObject.transform.rotation = spawnPoint.rotation;
+            playerNetworkObject.transform.position = spawnPoint.position;
+            playerNetworkObject.transform.rotation = spawnPoint.rotation;
 
-            Debug.Log($"Jugador {playerNetworkObject.OwnerClientId} respawneado en {spawnPoint.position}");
+            Debug.Log($"Respawn de player {playerNetworkObject.OwnerClientId} en {spawnPoint.position}");
         }
     }
 }

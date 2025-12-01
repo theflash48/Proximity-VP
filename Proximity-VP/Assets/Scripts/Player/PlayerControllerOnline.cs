@@ -43,31 +43,42 @@ public static event OnScoreUPOnline onScoreUPOnline;
     public bool isVisible = false;
     public float timeVisible = 5f;
     public float timeToInvisible = 0f;
+void Awake()
+{
+    //Rigidbody
+    rb = GetComponent<Rigidbody>();
 
-    void Awake()
-    {
-        //Rigidbody
-        rb = GetComponent<Rigidbody>();
-        //rb.freezeRotation = true; //Fisicas no afectan la rotacion del player
+    //MeshRenderer
+    meshRenderer = GetComponent<MeshRenderer>();
+    meshRenderer.enabled = false;
 
-        //MeshRenderer
-        meshRenderer = GetComponent<MeshRenderer>();
-        meshRenderer.enabled = false;
+    //InputSystem
+    playerInput = GetComponent<PlayerInput>();
 
-        //InputSystem
-        playerInput = GetComponent<PlayerInput>();
-
-        //Cursor
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+    //Cursor
+    Cursor.lockState = CursorLockMode.Locked;
+    Cursor.visible = false;
         
-        //Shoot
-        shootScript = GetComponent<Shoot>();
-        lineRender = firingPoint.GetComponent<LineRenderer>();
-        lineRender.enabled = false;
-        lineRender.useWorldSpace = true;
-        lineRender.positionCount = 2;
+    //Shoot
+    shootScript = GetComponent<Shoot>();
+    lineRender = firingPoint.GetComponent<LineRenderer>();
+    lineRender.enabled = false;
+    lineRender.useWorldSpace = true;
+    lineRender.positionCount = 2;
+
+    // ---------- NUEVO: buscar cámara propia ----------
+    if (cameraComponent == null)
+    {
+        cameraComponent = GetComponentInChildren<Camera>(true);
     }
+
+    if (cameraComponent != null && playerCamera == null)
+    {
+        playerCamera = cameraComponent.gameObject;
+    }
+    // -------------------------------------------------
+}
+
 
     public void ScoreUP()
 {
@@ -83,38 +94,62 @@ public static event OnScoreUPOnline onScoreUPOnline;
 }
 
 
-    // NUEVO: Solo el dueño puede controlar este jugador
-    public override void OnNetworkSpawn()
+public override void OnNetworkSpawn()
+{
+    // Asegurar referencias
+    if (cameraComponent == null)
+        cameraComponent = GetComponentInChildren<Camera>(true);
+    if (cameraComponent != null && playerCamera == null)
+        playerCamera = cameraComponent.gameObject;
+    if (playerInput == null)
+        playerInput = GetComponent<PlayerInput>();
+
+    if (IsOwner)
     {
-        if (!IsOwner)
+        // Activar input y cámara SOLO para el dueño en esta máquina
+        if (playerInput != null)
+            playerInput.enabled = true;
+
+        if (cameraComponent != null)
         {
-            // Deshabilitar control para jugadores que no son el dueño
-            if (playerInput != null)
-            {
-                playerInput.enabled = false;
-            }
-            
-            // Deshabilitar la cámara de jugadores remotos
-            if (cameraComponent != null)
-            {
-                cameraComponent.enabled = false;
-                // Opcional: también desactivar el AudioListener
-                AudioListener listener = cameraComponent.GetComponent<AudioListener>();
-                if (listener != null) listener.enabled = false;
-            }
+            cameraComponent.enabled = true;
+
+            var listener = cameraComponent.GetComponent<AudioListener>();
+            if (listener != null) listener.enabled = true;
         }
     }
+    else
+    {
+        // Desactivar input y cámara para los jugadores remotos en este cliente
+        if (playerInput != null)
+            playerInput.enabled = false;
 
-    //Cambiamos el OnEnable() y OnDisable() por funciones llamadas por PlayerInput por eventos
+        if (cameraComponent != null)
+        {
+            cameraComponent.enabled = false;
+
+            var listener = cameraComponent.GetComponent<AudioListener>();
+            if (listener != null) listener.enabled = false;
+        }
+    }
+}
+
+
     public void OnMove(InputValue value)
     {
         moveInput = value.Get<Vector2>();
     }
 
-    public void OnLook(InputValue value)
-    {
-        lookInput = value.Get<Vector2>();
-    }
+public void OnLook(InputValue value)
+{
+    if (playerInput != null && playerInput.currentControlScheme == "Keyboard&Mouse")
+        mouseSensitivity = 10f;
+    else
+        mouseSensitivity = 100f;
+
+    lookInput = value.Get<Vector2>();
+}
+
 
 public void OnShoot(InputValue value)
 {
