@@ -6,20 +6,21 @@ using UnityEngine.SceneManagement;
 
 public class ScoreBoard : MonoBehaviour
 {
+
+    //TIM ES EL UNICO CODIGO QUE TE TOQUE NO ME MATES
     // Listas de jugadores
     public List<PlayerControllerLocal> localPlayers = new List<PlayerControllerLocal>();
     public List<PlayerControllerOnline> onlinePlayers = new List<PlayerControllerOnline>();
 
-    // Orden original (Player 1, 2, 3, 4...)
     public List<GameObject> playerOrder = new List<GameObject>();
 
     [Header("UI")]
     public GameObject endScreen;
-    public GameObject[] scoreBanners;   // 0: 1st, 1: 2nd, 2: 3rd, 3: 4th/otros
+    public GameObject[] scoreBanners;
     public GameObject scorePanel;
 
     [Header("OPCIONAL: envío BD")]
-    public GameResultUploader resultUploader; // déjalo null si no usas BD
+    public GameResultUploader resultUploader;
     public int currentMapId = 1;
 
     void OnEnable()
@@ -44,9 +45,6 @@ public class ScoreBoard : MonoBehaviour
             endScreen.SetActive(false);
     }
 
-    /// <summary>
-    /// Localiza jugadores cuando empieza la partida
-    /// </summary>
     private void LocatePlayers()
     {
         localPlayers.Clear();
@@ -64,7 +62,6 @@ public class ScoreBoard : MonoBehaviour
             return;
         }
 
-        // Detectar tipo de partida por el primer jugador
         if (players[0].GetComponent<PlayerControllerLocal>() != null)
         {
             foreach (var p in players)
@@ -92,9 +89,6 @@ public class ScoreBoard : MonoBehaviour
         UpdateScores();
     }
 
-    /// <summary>
-    /// Actualiza las posiciones (1st, 2nd...) en el HUD durante la partida
-    /// </summary>
     void UpdateScores()
     {
         // LOCAL
@@ -141,9 +135,7 @@ public class ScoreBoard : MonoBehaviour
 
     int playersNameIndex;
 
-    /// <summary>
-    /// Construye los banners finales
-    /// </summary>
+
     public void PrintScores()
     {
         if (endScreen != null)
@@ -168,7 +160,6 @@ public class ScoreBoard : MonoBehaviour
 
                 ban.transform.SetParent(scorePanel.transform, false);
 
-                // Buscar qué "Player X" era (por score)
                 for (int b = 0; b < playerOrder.Count; b++)
                 {
                     var pc = playerOrder[b].GetComponent<PlayerControllerLocal>();
@@ -229,7 +220,6 @@ public class ScoreBoard : MonoBehaviour
             }
         }
 
-        // Enviar resultados a BD (opcional)
         var gm = FindObjectOfType<GameModeManager>();
         if (gm != null &&
             gm.conection == GameModeManager.conectionType.online &&
