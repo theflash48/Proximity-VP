@@ -534,8 +534,8 @@ MonoBehaviour:
   usernameInput: {fileID: 543549516}
   passwordInput: {fileID: 1654239322}
   messageText: {fileID: 1909805765}
-  loginUrl: http://localhost/screencheat/login.php
-  registerUrl: http://localhost/screencheat/register.php
+  loginUrl: http://proximityvp.alwaysdata.net/screencheat/login.php
+  registerUrl: http://proximityvp.alwaysdata.net/screencheat/register.php
 --- !u!4 &1040752451
 Transform:
   m_ObjectHideFlags: 0
