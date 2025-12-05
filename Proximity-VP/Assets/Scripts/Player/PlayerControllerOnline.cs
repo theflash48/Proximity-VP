@@ -106,7 +106,7 @@ public class PlayerControllerOnline : NetworkBehaviour
         if (playerInput == null)
             playerInput = GetComponent<PlayerInput>();
 
-        if (IsOwner)
+        /*if (IsOwner)
         {
             // Activar input y cámara SOLO para el dueño en esta máquina
             if (playerInput != null)
@@ -136,6 +136,23 @@ public class PlayerControllerOnline : NetworkBehaviour
                 var listener = cameraComponent.GetComponent<AudioListener>();
                 if (listener != null) listener.enabled = false;
             }
+        }*/
+        
+        // 1) El INPUT sigue siendo sólo del dueño
+        if (playerInput != null)
+            playerInput.enabled = IsOwner;
+
+        // 2) La CÁMARA debe renderizar SIEMPRE en todos los clientes
+        if (cameraComponent != null)
+        {
+            cameraComponent.enabled = true;
+
+            // 3) Pero el AUDIO sólo para el dueño (evitamos ecos y mezcla rara)
+            var listener = cameraComponent.GetComponent<AudioListener>();
+            if (listener != null)
+                listener.enabled = IsOwner;
+
+            playerCamera.SetActive(true);
         }
     }
 
