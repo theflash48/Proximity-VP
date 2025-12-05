@@ -11,15 +11,16 @@ using UnityEngine.InputSystem;
 // de scripts 
 public class PlayerControllerOnline : NetworkBehaviour
 {
-    [Header("Movement Settings")]
-    public float moveSpeed;
+    [Header("Movement Settings")] public float moveSpeed;
     public float mouseSensitivity;
     public float maxLookAngle;
     public float groundCheckDistance = 0.1f;
     public LayerMask groundLayer = 1;
     public int score = 0;
+
     public delegate void OnScoreUPOnline();
-public static event OnScoreUPOnline onScoreUPOnline;
+
+    public static event OnScoreUPOnline onScoreUPOnline;
 
 
     Rigidbody rb;
@@ -32,8 +33,8 @@ public static event OnScoreUPOnline onScoreUPOnline;
     public GameObject firingPoint;
     public Shoot shootScript;
     public LineRenderer lineRender;
-    
-    
+
+
 
     public Vector2 moveInput;
     public Vector2 lookInput;
@@ -43,99 +44,102 @@ public static event OnScoreUPOnline onScoreUPOnline;
     public bool isVisible = false;
     public float timeVisible = 5f;
     public float timeToInvisible = 0f;
-void Awake()
-{
-    //Rigidbody
-    rb = GetComponent<Rigidbody>();
 
-    //MeshRenderer
-    meshRenderer = GetComponent<MeshRenderer>();
-    meshRenderer.enabled = false;
-
-    //InputSystem
-    playerInput = GetComponent<PlayerInput>();
-
-    //Cursor
-    Cursor.lockState = CursorLockMode.Locked;
-    Cursor.visible = false;
-        
-    //Shoot
-    shootScript = GetComponent<Shoot>();
-    lineRender = firingPoint.GetComponent<LineRenderer>();
-    lineRender.enabled = false;
-    lineRender.useWorldSpace = true;
-    lineRender.positionCount = 2;
-
-    // ---------- NUEVO: buscar cámara propia ----------
-    if (cameraComponent == null)
+    void Awake()
     {
-        cameraComponent = GetComponentInChildren<Camera>(true);
-    }
+        //Rigidbody
+        rb = GetComponent<Rigidbody>();
 
-    if (cameraComponent != null && playerCamera == null)
-    {
-        playerCamera = cameraComponent.gameObject;
+        //MeshRenderer
+        meshRenderer = GetComponent<MeshRenderer>();
+        meshRenderer.enabled = false;
+
+        //InputSystem
+        playerInput = GetComponent<PlayerInput>();
+
+        //Cursor
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+
+        //Shoot
+        shootScript = GetComponent<Shoot>();
+        lineRender = firingPoint.GetComponent<LineRenderer>();
+        lineRender.enabled = false;
+        lineRender.useWorldSpace = true;
+        lineRender.positionCount = 2;
+
+        // ---------- NUEVO: buscar cámara propia ----------
+        if (cameraComponent == null)
+        {
+            cameraComponent = GetComponentInChildren<Camera>(true);
+        }
+
+        if (cameraComponent != null && playerCamera == null)
+        {
+            playerCamera = cameraComponent.gameObject;
+        }
+        // -------------------------------------------------
     }
-    // -------------------------------------------------
-}
 
 
     public void ScoreUP()
-{
-    score++;
-
-    var hud = GetComponent<PlayerHUD>();
-    if (hud != null)
     {
-        hud._fUpdateScore(score);
+        score++;
+
+        var hud = GetComponent<PlayerHUD>();
+        if (hud != null)
+        {
+            hud._fUpdateScore(score);
+        }
+
+        onScoreUPOnline?.Invoke();
     }
 
-    onScoreUPOnline?.Invoke();
-}
 
-
-public override void OnNetworkSpawn()
-{
-    // Asegurar referencias
-    if (cameraComponent == null)
-        cameraComponent = GetComponentInChildren<Camera>(true);
-    if (cameraComponent != null && playerCamera == null)
-        playerCamera = cameraComponent.gameObject;
-    if (playerInput == null)
-        playerInput = GetComponent<PlayerInput>();
-
-    if (IsOwner)
+    public override void OnNetworkSpawn()
     {
-        // Activar input y cámara SOLO para el dueño en esta máquina
-        if (playerInput != null)
-            playerInput.enabled = true;
+        // Asegurar referencias
+        if (cameraComponent == null)
+            cameraComponent = GetComponentInChildren<Camera>(true);
+        if (cameraComponent != null && playerCamera == null)
+            playerCamera = cameraComponent.gameObject;
+        if (playerInput == null)
+            playerInput = GetComponent<PlayerInput>();
 
-        if (cameraComponent != null)
+        if (IsOwner)
         {
-            cameraComponent.enabled = true;
+            // Activar input y cámara SOLO para el dueño en esta máquina
+            if (playerInput != null)
+                playerInput.enabled = true;
 
-            var listener = cameraComponent.GetComponent<AudioListener>();
-            if (listener != null) listener.enabled = true;
+            if (cameraComponent != null)
+            {
+                cameraComponent.enabled = true;
+
+                var listener = cameraComponent.GetComponent<AudioListener>();
+                if (listener != null) listener.enabled = true;
+
+                // Asegurar que la cámara está activa
+                playerCamera.SetActive(true);
+            }
+        }
+        else
+        {
+            // Desactivar input y cámara para los jugadores remotos en este cliente
+            if (playerInput != null)
+                playerInput.enabled = false;
+
+            if (cameraComponent != null)
+            {
+                cameraComponent.enabled = false;
+
+                var listener = cameraComponent.GetComponent<AudioListener>();
+                if (listener != null) listener.enabled = false;
+            }
         }
     }
-    else
-    {
-        // Desactivar input y cámara para los jugadores remotos en este cliente
-        if (playerInput != null)
-            playerInput.enabled = false;
 
-        if (cameraComponent != null)
-        {
-            cameraComponent.enabled = false;
-
-            var listener = cameraComponent.GetComponent<AudioListener>();
-            if (listener != null) listener.enabled = false;
-        }
-    }
-}
-
-
-    public void OnMove(InputValue value)
+public void OnMove(InputValue value)
     {
         moveInput = value.Get<Vector2>();
     }

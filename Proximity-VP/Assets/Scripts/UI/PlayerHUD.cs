@@ -10,6 +10,7 @@ public class PlayerHUD : MonoBehaviour
     public Text _cPlace;
     public Text _cScore;
 
+    private Camera cam;
 
     void Start()
     {
