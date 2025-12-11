@@ -1995,8 +1995,8 @@ MonoBehaviour:
   clientButton: {fileID: 1218360674}
   ipInputField: {fileID: 1242631176}
   statusText: {fileID: 923279177}
-  defaultIP: 84.120.101.84
-  port: 25565
+  defaultIP: 127.0.0.1
+  port: 7777
   gameSceneName: OnlineGame
 --- !u!114 &1997223474
 MonoBehaviour:
@@ -2020,8 +2020,8 @@ MonoBehaviour:
   m_MaxConnectAttempts: 60
   m_DisconnectTimeoutMS: 30000
   ConnectionData:
-    Address: 84.120.101.84
-    Port: 25565
+    Address: 127.0.0.1
+    Port: 7777
     ServerListenAddress: 127.0.0.1
   DebugSimulator:
     PacketDelayMS: 0
