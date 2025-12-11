@@ -4,6 +4,9 @@ using UnityEngine.EventSystems;
 public class Shoot : MonoBehaviour
 {
     public GameObject firingPoint;
+    
+    public AudioSource audioSource;
+    public AudioClip shootSound;
 
     // true si este objeto es un Player online
     private bool isOnline;
@@ -18,6 +21,9 @@ public class Shoot : MonoBehaviour
     /// </summary>
     public bool ShootBullet(GameObject playerCamera)
     {
+        if (audioSource != null && shootSound != null)
+            audioSource.PlayOneShot(shootSound);
+        
         if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
             return false;
 
