@@ -65,7 +65,7 @@ Canvas:
   m_AdditionalShaderChannelsFlag: 0
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
-  m_SortingOrder: 1
+  m_SortingOrder: 10
   m_TargetDisplay: 0
 --- !u!114 &5068236697520755758
 MonoBehaviour:
@@ -1597,6 +1597,8 @@ MonoBehaviour:
   isVisible: 0
   timeVisible: 1
   timeToInvisible: 0
+  timeCooldownMax: 1
+  timeCooldown: 0
 --- !u!114 &2219747137910009655
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1669,6 +1671,8 @@ MonoBehaviour:
   isVisible: 0
   timeVisible: 1
   timeToInvisible: 0
+  timeCooldownMax: 0.3
+  timeCooldown: 0
 --- !u!114 &3371151540221028801
 MonoBehaviour:
   m_ObjectHideFlags: 0

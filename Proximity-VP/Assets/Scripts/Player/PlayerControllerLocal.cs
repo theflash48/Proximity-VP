@@ -40,6 +40,9 @@ public class PlayerControllerLocal : MonoBehaviour
     public bool isVisible = false;
     public float timeVisible = 5f;
     public float timeToInvisible = 0f;
+    public float timeCooldownMax = 10f;
+    public float timeCooldown = 0f;
+    
 
     void OnEnable()
     {
@@ -134,25 +137,26 @@ public class PlayerControllerLocal : MonoBehaviour
     public void OnShoot(InputValue value)
     {
         // Solo el dueño puede disparar
-        //if (!IsOwner) return;
-
-        Debug.Log("Disparando!");
-
-        // Sistema de disparo con raycast
-        bool hit = shootScript.ShootBullet(playerCamera);
-        if (hit)
+        if (timeCooldown < 0)
         {
-            ScoreUP();
-            
-            txtScore.text = score.ToString();
-        }
-        
-        lineRender.SetPosition(0, firingPoint.transform.position);
-        lineRender.SetPosition(1, firingPoint.transform.position + playerCamera.transform.forward * 100);
-        
-        isVisible = true;
+            Debug.Log("Disparando!");
 
-        timeToInvisible = timeVisible;
+            // Sistema de disparo con raycast
+            bool hit = shootScript.ShootBullet(playerCamera);
+            if (hit)
+            {
+                ScoreUP();
+            
+                txtScore.text = score.ToString();
+            }
+        
+            lineRender.SetPosition(0, firingPoint.transform.position);
+            lineRender.SetPosition(1, firingPoint.transform.position + playerCamera.transform.forward * 100);
+        
+            isVisible = true;
+            timeCooldown = timeCooldownMax;
+            timeToInvisible = timeVisible;
+        }
     }
 
     public delegate void OnScoreUP();
@@ -172,6 +176,7 @@ public class PlayerControllerLocal : MonoBehaviour
         HandleLook();
         CheckGrounded();
         VisibilityHandler();
+        ShootCooldown();
     }
     
     private void FixedUpdate()
@@ -240,6 +245,11 @@ public class PlayerControllerLocal : MonoBehaviour
         }
         isVisible = timeToInvisible > 0.0f;
         if (timeToInvisible > 0.0f) timeToInvisible -= Time.deltaTime; 
+    }
+
+    void ShootCooldown()
+    {
+        timeCooldown -= Time.deltaTime;
     }
 
     void OnDrawGizmosSelected()

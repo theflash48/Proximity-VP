@@ -44,6 +44,8 @@ public class PlayerControllerOnline : NetworkBehaviour
     public bool isVisible = false;
     public float timeVisible = 5f;
     public float timeToInvisible = 0f;
+    public float timeCooldownMax = 10f;
+    public float timeCooldown = 0f;
 
     void Awake()
     {
@@ -174,26 +176,30 @@ public void OnLook(InputValue value)
 
 public void OnShoot(InputValue value)
 {
-    // Solo el dueño puede disparar
-    if (!IsOwner) return;
-    if (shootScript == null || playerCamera == null) return;
-
-    Debug.Log("Disparando!");
-
-    bool hitPlayer = shootScript.ShootBullet(playerCamera);
-    if (hitPlayer)
+    if (timeCooldown < 0)
     {
-        ScoreUP();
-    }
+        // Solo el dueño puede disparar
+        if (!IsOwner) return;
+        if (shootScript == null || playerCamera == null) return;
 
-    if (lineRender != null && firingPoint != null)
-    {
-        lineRender.SetPosition(0, firingPoint.transform.position);
-        lineRender.SetPosition(1, firingPoint.transform.position + playerCamera.transform.forward * 100);
-    }
+        Debug.Log("Disparando!");
 
-    isVisible = true;
-    timeToInvisible = timeVisible;
+        bool hitPlayer = shootScript.ShootBullet(playerCamera);
+        if (hitPlayer)
+        {
+            ScoreUP();
+        }
+
+        if (lineRender != null && firingPoint != null)
+        {
+            lineRender.SetPosition(0, firingPoint.transform.position);
+            lineRender.SetPosition(1, firingPoint.transform.position + playerCamera.transform.forward * 100);
+        }
+
+        isVisible = true;
+        timeCooldown = timeCooldownMax;
+        timeToInvisible = timeVisible;
+    }
 }
 
 
@@ -205,6 +211,7 @@ public void OnShoot(InputValue value)
         HandleLook();
         CheckGrounded();
         VisibilityHandler();
+        ShootCooldown();
     }
     
     private void FixedUpdate()
@@ -273,6 +280,11 @@ public void OnShoot(InputValue value)
         }
         isVisible = timeToInvisible > 0.0f;
         if (timeToInvisible > 0.0f) timeToInvisible -= Time.deltaTime; 
+    }
+    
+    void ShootCooldown()
+    {
+        timeCooldown -= Time.deltaTime;
     }
 
     void OnDrawGizmosSelected()

@@ -1546,6 +1546,8 @@ MonoBehaviour:
   isVisible: 0
   timeVisible: 1
   timeToInvisible: 0
+  timeCooldownMax: 0.3
+  timeCooldown: 0
 --- !u!114 &2219747137910009655
 MonoBehaviour:
   m_ObjectHideFlags: 0
