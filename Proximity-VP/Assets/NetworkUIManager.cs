@@ -91,6 +91,7 @@ public class NetworkUIManager : MonoBehaviour
             // EL HOST CARGA LA ESCENA, LOS CLIENTES LA SEGUIRÁN
            if (NetworkManager.Singleton != null)
            {
+               NetworkManager.Singleton.StartHost();
                Debug.Log("NetworkManager si existe");
                 NetworkManager.Singleton.SceneManager.LoadScene(
                     gameSceneName, 
