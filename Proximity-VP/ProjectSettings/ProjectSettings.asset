@@ -917,10 +917,10 @@ PlayerSettings:
   captureStartupLogs: {}
   activeInputHandler: 2
   windowsGamepadBackendHint: 0
-  cloudProjectId: 11c0009a-a50c-4563-83d0-569da77a1b99
+  cloudProjectId: 08e482ac-0dab-4572-8601-3138c750fde9
   framebufferDepthMemorylessMode: 0
   qualitySettingsNames: []
-  projectName: NetworkTest
+  projectName: Proximity-VP
   organizationId: sinnerbie
   cloudEnabled: 0
   legacyClampBlendShapeWeights: 0

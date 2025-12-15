@@ -89,10 +89,14 @@ public class NetworkUIManager : MonoBehaviour
             HideMenu();
 
             // EL HOST CARGA LA ESCENA, LOS CLIENTES LA SEGUIRÁN
-            NetworkManager.Singleton.SceneManager.LoadScene(
-                gameSceneName, 
-                LoadSceneMode.Single
-            );
+           if (NetworkManager.Singleton != null)
+           {
+               Debug.Log("NetworkManager si existe");
+                NetworkManager.Singleton.SceneManager.LoadScene(
+                    gameSceneName, 
+                    LoadSceneMode.Single
+                );
+           }
         }
         else
         {
