@@ -220,7 +220,7 @@ public class ScoreBoard : MonoBehaviour
             }
         }
 
-        var gm = FindObjectOfType<GameModeManager>();
+        var gm = FindFirstObjectByType<GameModeManager>();
         if (gm != null &&
             gm.conection == GameModeManager.conectionType.online &&
             AccountSession.Instance != null &&
