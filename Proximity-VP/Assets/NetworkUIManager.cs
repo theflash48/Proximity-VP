@@ -1,8 +1,24 @@
+using UnityEngine.SceneManagement;
+using System.Threading.Tasks;
+using UnityEngine.UI;
 using Unity.Netcode;
 using UnityEngine;
-using UnityEngine.UI;
 using TMPro;
-using UnityEngine.SceneManagement;
+
+using Unity.Services.Core;
+using Unity.Services.Authentication;
+
+// Unified Multiplayer Services package (still implicitly used for authentication and Netcode setup)
+using Unity.Services.Multiplayer;
+
+// Explicitly use the standalone Lobby and Relay Services for their entry points as per migration guide
+using Unity.Services.Relay;
+using Unity.Services.Relay.Models;
+
+// Netcode and Transport
+using Unity.Netcode;
+using Unity.Netcode.Transports.UTP;
+using Unity.Networking.Transport.Relay; // For RelayServerData (still used as a type)
 
 public class NetworkUIManager : MonoBehaviour
 {
@@ -11,6 +27,7 @@ public class NetworkUIManager : MonoBehaviour
     public Button hostButton;
     public Button clientButton;
     public TMP_InputField ipInputField;
+    public InputField inputJoinCode;
     public TextMeshProUGUI statusText;
 
     [Header("Configuración")]
@@ -65,9 +82,9 @@ public class NetworkUIManager : MonoBehaviour
 
         SetupTransport();
 
-        bool success = NetworkManager.Singleton.StartHost();
-
-        if (success)
+        string joinCode = StartHostWithRelay(4, "udp").ToString();
+        Debug.LogError(joinCode);
+        if (joinCode != null)
         {
             UpdateStatus($"Host iniciado en {GetLocalIP()}:{port}");
             HideMenu();
@@ -84,6 +101,19 @@ public class NetworkUIManager : MonoBehaviour
         }
     }
 
+    public async Task<string> StartHostWithRelay(int maxConnections, string connectionType)
+    {
+        await UnityServices.InitializeAsync();
+        if (!AuthenticationService.Instance.IsSignedIn)
+        {
+            await AuthenticationService.Instance.SignInAnonymouslyAsync();
+        }
+        var allocation = await RelayService.Instance.CreateAllocationAsync(maxConnections);
+        NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(AllocationUtils.ToRelayServerData(allocation, connectionType));
+        var joinCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
+        return NetworkManager.Singleton.StartHost() ? joinCode : null;
+    }
+
     public void StartClient()
     {
         if (NetworkManager.Singleton == null)
@@ -97,7 +127,7 @@ public class NetworkUIManager : MonoBehaviour
 
         SetupTransport();
 
-        bool success = NetworkManager.Singleton.StartClient();
+        bool success = StartClientWithRelay(inputJoinCode.text, "udp").Result;
 
         if (success)
         {
@@ -112,6 +142,18 @@ public class NetworkUIManager : MonoBehaviour
             ShowMenu();
         }
     }
+
+    public async Task<bool> StartClientWithRelay(string joinCode, string connectionType)
+    {
+        await UnityServices.InitializeAsync();
+        if (!AuthenticationService.Instance.IsSignedIn)
+        {
+            await AuthenticationService.Instance.SignInAnonymouslyAsync();
+        }
+        var allocation = await RelayService.Instance.JoinAllocationAsync(joinCode: joinCode);
+        NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(AllocationUtils.ToRelayServerData(allocation, connectionType));
+        return !string.IsNullOrEmpty(joinCode) && NetworkManager.Singleton.StartClient();
+        }
 
     void SetupTransport()
     {
