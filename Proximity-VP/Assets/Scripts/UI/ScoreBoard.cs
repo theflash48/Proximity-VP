@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class ScoreBoard : MonoBehaviour
 {
@@ -22,6 +23,9 @@ public class ScoreBoard : MonoBehaviour
     [Header("OPCIONAL: envío BD")]
     public GameResultUploader resultUploader;
     public int currentMapId = 1;
+
+    [Header("Mostrar Join Code")]
+    [SerializeField] Text joinCodeDisplay;
 
     void OnEnable()
     {
@@ -43,6 +47,9 @@ public class ScoreBoard : MonoBehaviour
     {
         if (endScreen != null)
             endScreen.SetActive(false);
+
+        if (FindFirstObjectByType<NetworkUIManager>() != null)
+            joinCodeDisplay.text = "JoinCode: " + FindFirstObjectByType<NetworkUIManager>().joinCode.ToString();
     }
 
     private void LocatePlayers()

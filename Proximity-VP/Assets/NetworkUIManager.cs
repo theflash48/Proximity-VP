@@ -27,6 +27,7 @@ public class NetworkUIManager : MonoBehaviour
     public Button clientButton;
     public TMP_InputField ipInputField;
     public InputField inputJoinCode;
+    public int joinCode;
     public TextMeshProUGUI statusText;
 
     [Header("Configuración")]
@@ -81,22 +82,19 @@ public class NetworkUIManager : MonoBehaviour
 
         SetupTransport();
 
-        string joinCode = StartHostWithRelay(4, "udp").ToString();
-        Debug.LogError(joinCode);
-        if (joinCode != null)
-        {
-            UpdateStatus($"Host iniciado en {GetLocalIP()}:{port}");
-            HideMenu();
+        joinCode = StartHostWithRelay(4, "udp").GetHashCode();
 
-            // EL HOST CARGA LA ESCENA, LOS CLIENTES LA SEGUIRÁN
+        if (joinCode != 0)
+        {
+           UpdateStatus($"Host iniciado en {GetLocalIP()}:{port}");
+           HideMenu();
+
+           // EL HOST CARGA LA ESCENA, LOS CLIENTES LA SEGUIRÁN
            if (NetworkManager.Singleton != null)
            {
                NetworkManager.Singleton.StartHost();
                Debug.Log("NetworkManager si existe");
-                NetworkManager.Singleton.SceneManager.LoadScene(
-                    gameSceneName, 
-                    LoadSceneMode.Single
-                );
+               NetworkManager.Singleton.SceneManager.LoadScene(gameSceneName, LoadSceneMode.Single);
            }
         }
         else
