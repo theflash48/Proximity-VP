@@ -48,6 +48,7 @@ public class PlayerHealthOnline : NetworkBehaviour
         }
 
         currentLives.Value--;
+        GetComponent<PlayerHUD>()._fHealthUI(currentLives.Value, maxLives);
         Debug.Log(gameObject.name + " vidas restantes (online): " + currentLives.Value);
 
         if (currentLives.Value <= 0)
@@ -94,6 +95,7 @@ public class PlayerHealthOnline : NetworkBehaviour
         if (resetLives)
         {
             currentLives.Value = maxLives;
+            GetComponent<PlayerHUD>()._fHealthUI(currentLives.Value, maxLives);
         }
 
         // Reactivar

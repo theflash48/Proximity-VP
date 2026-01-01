@@ -63,6 +63,7 @@ public class PlayerHealthLocal : MonoBehaviour
         }
         
         currentLives--;
+        GetComponent<PlayerHUD>()._fHealthUI(currentLives, maxLives);
         Debug.Log(gameObject.name + " vidas restantes: " + currentLives);
 
         if (currentLives <= 0)
@@ -167,6 +168,7 @@ public class PlayerHealthLocal : MonoBehaviour
     {
         // Restaurar vidas
         currentLives = maxLives;
+        GetComponent<PlayerHUD>()._fHealthUI(currentLives, maxLives);
         isDead = false;
 
         // Obtener spawn point más lejano

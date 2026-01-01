@@ -22,11 +22,12 @@ public class PlayerHUD : MonoBehaviour
         _cScore.text = score.ToString();
     }
 
-    public void _fHealthUI(float cur, float max)
+    public void _fHealthUI(int cur, int max)
     {
-        float damage = cur / max;
-        _cHUD.color = new Color (1, damage, damage, 1);
-        _cReloadBar.color = new Color (1, damage, damage, 1);
+        if (cur <= max / 2)
+            _cHUD.color = new Color32(255, 0, 0, 255);
+        else
+            _cHUD.color = new Color32(255, 255, 255, 255);
     }
 
     public void _fToggleInvisibilityUI(bool isVisible)
@@ -37,19 +38,18 @@ public class PlayerHUD : MonoBehaviour
             _cInvisibility.enabled = true;
     }
 
-    private float _vReDelay;
     public void _fReloadUI(float loadDelay)
     {
-        _vReDelay = loadDelay;
-        StartCoroutine("_fReloadBar");
+        Debug.Log("HUD delay: " + loadDelay);
+        StartCoroutine(_fReloadBar(loadDelay));
     }
 
-    private IEnumerator _fReloadBar()
+    private IEnumerator _fReloadBar(float reDelay)
     {
         _cReloadBar.fillAmount = 1;
-        for (float i = 0; i < _vReDelay; i += 0.02f)
+        for (float i = 0; i < reDelay; i += 0.02f)
         {
-            _cReloadBar.fillAmount -= 0.02f / _vReDelay;
+            _cReloadBar.fillAmount -= 0.02f / reDelay;
             yield return new WaitForSeconds(0.02f);
         }
         _cReloadBar.fillAmount = 0;

@@ -199,6 +199,7 @@ public void OnShoot(InputValue value)
         isVisible = true;
         timeCooldown = timeCooldownMax;
         timeToInvisible = timeVisible;
+        GetComponent<PlayerHUD>()._fReloadUI(timeCooldownMax);
     }
 }
 
@@ -272,11 +273,13 @@ public void OnShoot(InputValue value)
         {
             meshRenderer.enabled = true;
             lineRender.enabled = true;
+            GetComponent<PlayerHUD>()._fToggleInvisibilityUI(true);
         }
         else
         {
             meshRenderer.enabled = false;
             lineRender.enabled = false;
+            GetComponent<PlayerHUD>()._fToggleInvisibilityUI(false);
         }
         isVisible = timeToInvisible > 0.0f;
         if (timeToInvisible > 0.0f) timeToInvisible -= Time.deltaTime; 

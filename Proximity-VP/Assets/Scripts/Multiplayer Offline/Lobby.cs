@@ -49,7 +49,7 @@ public class Lobby : MonoBehaviour
 
     void ConfigureSplitScreen()
     {
-        PlayerInput[] players = FindObjectsOfType<PlayerInput>();
+        PlayerInput[] players = FindObjectsByType<PlayerInput>(FindObjectsSortMode.None);
 
         switch (players.Length)
         {

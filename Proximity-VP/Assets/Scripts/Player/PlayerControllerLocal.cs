@@ -156,6 +156,9 @@ public class PlayerControllerLocal : MonoBehaviour
             isVisible = true;
             timeCooldown = timeCooldownMax;
             timeToInvisible = timeVisible;
+            
+            Debug.Log("Player delay:" + timeCooldownMax);
+            GetComponent<PlayerHUD>()._fReloadUI(timeCooldownMax);
         }
     }
 
@@ -164,7 +167,7 @@ public class PlayerControllerLocal : MonoBehaviour
     public void ScoreUP()
     {
         score++;
-        gameObject.GetComponent<PlayerHUD>()._fUpdateScore(score);
+        GetComponent<PlayerHUD>()._fUpdateScore(score);
         onScoreUP?.Invoke();
     }
     
@@ -237,11 +240,13 @@ public class PlayerControllerLocal : MonoBehaviour
         {
             meshRenderer.enabled = true;
             lineRender.enabled = true;
+            GetComponent<PlayerHUD>()._fToggleInvisibilityUI(true);
         }
         else
         {
             meshRenderer.enabled = false;
             lineRender.enabled = false;
+            GetComponent<PlayerHUD>()._fToggleInvisibilityUI(false);
         }
         isVisible = timeToInvisible > 0.0f;
         if (timeToInvisible > 0.0f) timeToInvisible -= Time.deltaTime; 
