@@ -25,10 +25,10 @@ public class NetworkUIManager : MonoBehaviour
     public GameObject menuPanel;
     public Button hostButton;
     public Button clientButton;
-    public TMP_InputField ipInputField;
+    public InputField ipInput;
     public InputField inputJoinCode;
     public int joinCode;
-    public TextMeshProUGUI statusText;
+    public Text statusMSG;
 
     [Header("Configuración")]
     public string defaultIP = "127.0.0.1";
@@ -45,8 +45,8 @@ public class NetworkUIManager : MonoBehaviour
         if (clientButton != null)
             clientButton.onClick.AddListener(StartClient);
 
-        if (ipInputField != null)
-            ipInputField.text = defaultIP;
+        if (ipInput != null)
+            ipInput.text = defaultIP;
 
         UpdateStatus("Esperando conexión...");
 
@@ -173,8 +173,8 @@ public class NetworkUIManager : MonoBehaviour
 
     string GetTargetIP()
     {
-        if (ipInputField != null && !string.IsNullOrEmpty(ipInputField.text))
-            return ipInputField.text;
+        if (ipInput != null && !string.IsNullOrEmpty(ipInput.text))
+            return ipInput.text;
 
         return defaultIP;
     }
@@ -197,8 +197,8 @@ public class NetworkUIManager : MonoBehaviour
 
     void UpdateStatus(string message)
     {
-        if (statusText != null)
-            statusText.text = message;
+        if (statusMSG != null)
+            statusMSG.text = message;
 
         Debug.Log($"[NetworkUI] {message}");
     }

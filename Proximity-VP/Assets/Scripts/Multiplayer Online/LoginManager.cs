@@ -77,6 +77,11 @@ public class LoginManager : MonoBehaviour
         }
     }
 
+    public void BackToMain()
+    {
+        SceneManager.LoadScene("MainMenu");
+    }
+
     [System.Serializable]
     class LoginResponse
     {
