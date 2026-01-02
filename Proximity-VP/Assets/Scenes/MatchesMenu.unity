@@ -2711,7 +2711,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0e54d5b05ea10564b9b88f4153bea46b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  menuPanel: {fileID: 0}
+  menuPanel: {fileID: 430625533}
   hostButton: {fileID: 1646622042}
   clientButton: {fileID: 1027946037}
   ipInput: {fileID: 1046356572}

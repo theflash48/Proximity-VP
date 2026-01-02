@@ -44,7 +44,7 @@ public class NetworkUIManager : MonoBehaviour
             hostButton.onClick.AddListener(BeginStartHost);
 
         if (clientButton != null)
-            clientButton.onClick.AddListener(StartClient);
+            clientButton.onClick.AddListener(BeginStartClient);
 
         if (ipInput != null)
             ipInput.text = defaultIP;
@@ -64,7 +64,7 @@ public class NetworkUIManager : MonoBehaviour
             hostButton.onClick.RemoveListener(BeginStartHost);
 
         if (clientButton != null)
-            clientButton.onClick.RemoveListener(StartClient);
+            clientButton.onClick.RemoveListener(BeginStartClient);
 
         if (NetworkManager.Singleton != null)
             NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnect;
@@ -128,7 +128,7 @@ public class NetworkUIManager : MonoBehaviour
         return NetworkManager.Singleton.StartHost() ? joinCode : null;
     }
 
-    public void StartClient()
+    public void BeginStartClient()
     {
         Debug.LogError("1");
         if (NetworkManager.Singleton == null)
@@ -138,15 +138,22 @@ public class NetworkUIManager : MonoBehaviour
             return;
         }
 
+        StartCoroutine(StartClient());
+    }
+
+    IEnumerator StartClient()
+    {
         Debug.LogError("2");
         UpdateStatus("Conectando...");
 
         Debug.LogError("3");
         SetupTransport();
 
+        yield return new WaitForSeconds(6);
         Debug.LogError("4");
         bool success = StartClientWithRelay(inputJoinCode.text, "udp").Result;
 
+        yield return new WaitForSeconds(6);
 
         Debug.LogError("5");
         if (success)
@@ -154,6 +161,7 @@ public class NetworkUIManager : MonoBehaviour
             Debug.LogError("6");
             UpdateStatus($"Conectando a {GetTargetIP()}:{port}...");
             HideMenu();
+            StopCoroutine(StartClient());
             // el cliente solo espera; cuando el host cargue GameOnline,
             // Netcode lo llevará también a esa escena
         }
@@ -162,7 +170,9 @@ public class NetworkUIManager : MonoBehaviour
             Debug.LogError("7");
             UpdateStatus("ERROR: No se pudo conectar");
             ShowMenu();
+            StopCoroutine(StartClient());
         }
+
     }
 
     public async Task<bool> StartClientWithRelay(string joinCode, string connectionType)
