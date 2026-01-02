@@ -1,5 +1,6 @@
 using UnityEngine.SceneManagement;
 using System.Threading.Tasks;
+using System.Collections;
 using UnityEngine.UI;
 using Unity.Netcode;
 using UnityEngine;
@@ -40,7 +41,7 @@ public class NetworkUIManager : MonoBehaviour
     void Start()
     {
         if (hostButton != null)
-            hostButton.onClick.AddListener(StartHost);
+            hostButton.onClick.AddListener(BeginStartHost);
 
         if (clientButton != null)
             clientButton.onClick.AddListener(StartClient);
@@ -60,7 +61,7 @@ public class NetworkUIManager : MonoBehaviour
     void OnDestroy()
     {
         if (hostButton != null)
-            hostButton.onClick.RemoveListener(StartHost);
+            hostButton.onClick.RemoveListener(BeginStartHost);
 
         if (clientButton != null)
             clientButton.onClick.RemoveListener(StartClient);
@@ -69,7 +70,7 @@ public class NetworkUIManager : MonoBehaviour
             NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnect;
     }
 
-    public void StartHost()
+    public void BeginStartHost()
     {
         if (NetworkManager.Singleton == null)
         {
@@ -78,11 +79,19 @@ public class NetworkUIManager : MonoBehaviour
             return;
         }
 
+        StartCoroutine(StartHost());
+    }
+
+    IEnumerator StartHost()
+    {
+
         UpdateStatus("Iniciando Host...");
 
         SetupTransport();
 
         joinCode = StartHostWithRelay(4, "udp").GetHashCode();
+
+        yield return new WaitForSeconds(5);
 
         if (joinCode != 0)
         {
@@ -95,11 +104,13 @@ public class NetworkUIManager : MonoBehaviour
                NetworkManager.Singleton.StartHost();
                Debug.Log("NetworkManager si existe");
                NetworkManager.Singleton.SceneManager.LoadScene(gameSceneName, LoadSceneMode.Single);
+               StopCoroutine(StartHost());
            }
         }
         else
         {
             UpdateStatus("ERROR: No se pudo iniciar Host");
+            StopCoroutine(StartHost());
         }
     }
 
@@ -112,6 +123,7 @@ public class NetworkUIManager : MonoBehaviour
         }
         var allocation = await RelayService.Instance.CreateAllocationAsync(maxConnections);
         NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(AllocationUtils.ToRelayServerData(allocation, connectionType));
+        Debug.LogError("Relay");
         var joinCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
         return NetworkManager.Singleton.StartHost() ? joinCode : null;
     }
@@ -154,6 +166,7 @@ public class NetworkUIManager : MonoBehaviour
         }
         var allocation = await RelayService.Instance.JoinAllocationAsync(joinCode: joinCode);
         NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(AllocationUtils.ToRelayServerData(allocation, connectionType));
+        Debug.LogError("Relay");
         return !string.IsNullOrEmpty(joinCode) && NetworkManager.Singleton.StartClient();
         }
 
