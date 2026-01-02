@@ -130,6 +130,7 @@ public class NetworkUIManager : MonoBehaviour
 
     public void StartClient()
     {
+        Debug.LogError("1");
         if (NetworkManager.Singleton == null)
         {
             Debug.LogError("NetworkManager no encontrado en la escena!");
@@ -137,14 +138,20 @@ public class NetworkUIManager : MonoBehaviour
             return;
         }
 
+        Debug.LogError("2");
         UpdateStatus("Conectando...");
 
+        Debug.LogError("3");
         SetupTransport();
 
+        Debug.LogError("4");
         bool success = StartClientWithRelay(inputJoinCode.text, "udp").Result;
 
+
+        Debug.LogError("5");
         if (success)
         {
+            Debug.LogError("6");
             UpdateStatus($"Conectando a {GetTargetIP()}:{port}...");
             HideMenu();
             // el cliente solo espera; cuando el host cargue GameOnline,
@@ -152,6 +159,7 @@ public class NetworkUIManager : MonoBehaviour
         }
         else
         {
+            Debug.LogError("7");
             UpdateStatus("ERROR: No se pudo conectar");
             ShowMenu();
         }
