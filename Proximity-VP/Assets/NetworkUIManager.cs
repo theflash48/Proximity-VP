@@ -4,7 +4,7 @@ using System.Collections;
 using UnityEngine.UI;
 using Unity.Netcode;
 using UnityEngine;
-using TMPro;
+using System;
 
 using Unity.Services.Core;
 using Unity.Services.Authentication;
@@ -37,6 +37,9 @@ public class NetworkUIManager : MonoBehaviour
 
     [Header("Escenas")]
     public string gameSceneName = "GameOnline";
+
+    private bool isSigningIn = false;
+    private bool servicesInitialized = false;
 
     void Start()
     {
@@ -116,11 +119,19 @@ public class NetworkUIManager : MonoBehaviour
 
     public async Task<string> StartHostWithRelay(int maxConnections, string connectionType)
     {
-        await UnityServices.InitializeAsync();
-        if (!AuthenticationService.Instance.IsSignedIn)
+        if (!servicesInitialized)
         {
-            await AuthenticationService.Instance.SignInAnonymouslyAsync();
+            await UnityServices.InitializeAsync();
+            servicesInitialized = true;
         }
+
+        if (!AuthenticationService.Instance.IsSignedIn && isSigningIn)
+        {
+            isSigningIn = true;
+            await AuthenticationService.Instance.SignInAnonymouslyAsync();
+            isSigningIn = false;
+        }
+
         var allocation = await RelayService.Instance.CreateAllocationAsync(maxConnections);
         NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(AllocationUtils.ToRelayServerData(allocation, connectionType));
         Debug.LogError("Relay");
@@ -143,22 +154,19 @@ public class NetworkUIManager : MonoBehaviour
 
     IEnumerator StartClient()
     {
-        Debug.LogError("2");
         UpdateStatus("Conectando...");
 
-        Debug.LogError("3");
         SetupTransport();
 
-        yield return new WaitForSeconds(6);
-        Debug.LogError("4");
-        bool success = StartClientWithRelay(inputJoinCode.text, "udp").Result;
+        var task = StartClientWithRelay(inputJoinCode.text, "udp");
 
-        yield return new WaitForSeconds(6);
+        while (!task.IsCompleted)
+            yield return null;
 
-        Debug.LogError("5");
+        bool success = task.Result;
+
         if (success)
         {
-            Debug.LogError("6");
             UpdateStatus($"Conectando a {GetTargetIP()}:{port}...");
             HideMenu();
             StopCoroutine(StartClient());
@@ -167,7 +175,7 @@ public class NetworkUIManager : MonoBehaviour
         }
         else
         {
-            Debug.LogError("7");
+
             UpdateStatus("ERROR: No se pudo conectar");
             ShowMenu();
             StopCoroutine(StartClient());
@@ -177,16 +185,44 @@ public class NetworkUIManager : MonoBehaviour
 
     public async Task<bool> StartClientWithRelay(string joinCode, string connectionType)
     {
-        await UnityServices.InitializeAsync();
-        if (!AuthenticationService.Instance.IsSignedIn)
+        try
         {
-            await AuthenticationService.Instance.SignInAnonymouslyAsync();
+            if (!servicesInitialized)
+            {
+                await UnityServices.InitializeAsync();
+                servicesInitialized = true;
+            }
+
+            if (!AuthenticationService.Instance.IsSignedIn && !isSigningIn)
+            {
+                isSigningIn = true;
+                await AuthenticationService.Instance.SignInAnonymouslyAsync();
+                isSigningIn = false;
+            }
+
+            var allocation = await RelayService.Instance.JoinAllocationAsync(joinCode);
+
+            if (NetworkManager.Singleton != null)
+            {
+                NetworkManager.Singleton.Shutdown();
+                await Task.Yield();
+            }
+
+            await UnityThread.SwitchToMainThread();
+
+            var transport = NetworkManager.Singleton.GetComponent<UnityTransport>();
+            transport.SetRelayServerData(
+                AllocationUtils.ToRelayServerData(allocation, connectionType)
+            );
+
+            return NetworkManager.Singleton.StartClient();
         }
-        var allocation = await RelayService.Instance.JoinAllocationAsync(joinCode: joinCode);
-        NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(AllocationUtils.ToRelayServerData(allocation, connectionType));
-        Debug.LogError("Relay");
-        return !string.IsNullOrEmpty(joinCode) && NetworkManager.Singleton.StartClient();
+        catch (Exception e)
+        {
+            Debug.LogError($"StartClientWithRelay failed:\n{e}");
+            return false;
         }
+    }
 
     void SetupTransport()
     {
