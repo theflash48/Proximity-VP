@@ -92,11 +92,16 @@ public class NetworkUIManager : MonoBehaviour
 
         SetupTransport();
 
-        joinCode = StartHostWithRelay(4, "udp").GetHashCode();
+        var task = StartHostWithRelay(4, "udp");
+
+        while (!task.IsCompleted)
+            yield return null;
+
+        string joinCode = task.Result;
 
         yield return new WaitForSeconds(5);
 
-        if (joinCode != 0)
+        if (!string.IsNullOrEmpty(joinCode))
         {
            UpdateStatus($"Host iniciado en {GetLocalIP()}:{port}");
            HideMenu();
@@ -125,7 +130,7 @@ public class NetworkUIManager : MonoBehaviour
             servicesInitialized = true;
         }
 
-        if (!AuthenticationService.Instance.IsSignedIn && isSigningIn)
+        if (!AuthenticationService.Instance.IsSignedIn && !isSigningIn)
         {
             isSigningIn = true;
             await AuthenticationService.Instance.SignInAnonymouslyAsync();
