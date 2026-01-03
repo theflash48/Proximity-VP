@@ -49,7 +49,7 @@ public class ScoreBoard : MonoBehaviour
             endScreen.SetActive(false);
 
         if (FindFirstObjectByType<NetworkUIManager>() != null)
-            joinCodeDisplay.text = "JoinCode: " + FindFirstObjectByType<NetworkUIManager>().joinCode.ToString();
+            joinCodeDisplay.text = "JoinCode: " + FindFirstObjectByType<NetworkUIManager>().joinCode;
     }
 
     private void LocatePlayers()

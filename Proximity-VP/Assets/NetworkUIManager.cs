@@ -28,7 +28,7 @@ public class NetworkUIManager : MonoBehaviour
     public Button clientButton;
     public InputField ipInput;
     public InputField inputJoinCode;
-    public int joinCode;
+    public string joinCode;
     public Text statusMSG;
 
     [Header("Configuración")]
@@ -97,12 +97,11 @@ public class NetworkUIManager : MonoBehaviour
         while (!task.IsCompleted)
             yield return null;
 
-        string joinCodeInt = task.Result;
-        joinCode = int.Parse(joinCodeInt);
+        joinCode = task.Result;
 
         yield return new WaitForSeconds(5);
 
-        if (!string.IsNullOrEmpty(joinCodeInt))
+        if (!string.IsNullOrEmpty(joinCode))
         {
            UpdateStatus($"Host iniciado en {GetLocalIP()}:{port}");
            HideMenu();
