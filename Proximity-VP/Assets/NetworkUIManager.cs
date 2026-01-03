@@ -97,11 +97,12 @@ public class NetworkUIManager : MonoBehaviour
         while (!task.IsCompleted)
             yield return null;
 
-        string joinCode = task.Result;
+        string joinCodeInt = task.Result;
+        joinCode = int.Parse(joinCodeInt);
 
         yield return new WaitForSeconds(5);
 
-        if (!string.IsNullOrEmpty(joinCode))
+        if (!string.IsNullOrEmpty(joinCodeInt))
         {
            UpdateStatus($"Host iniciado en {GetLocalIP()}:{port}");
            HideMenu();
