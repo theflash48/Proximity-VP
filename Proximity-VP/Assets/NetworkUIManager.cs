@@ -146,13 +146,13 @@ public class NetworkUIManager : MonoBehaviour
 
     public void BeginStartClient()
     {
-        Debug.LogError("1");
         if (NetworkManager.Singleton == null)
         {
             Debug.LogError("NetworkManager no encontrado en la escena!");
             UpdateStatus("ERROR: NetworkManager no encontrado");
             return;
         }
+        joinCode = inputJoinCode.text;
 
         StartCoroutine(StartClient());
     }
