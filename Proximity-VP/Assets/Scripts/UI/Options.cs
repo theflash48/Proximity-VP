@@ -30,4 +30,10 @@ public class MenuSystem : MonoBehaviour
 
         Debug.Log("Panel de gráficos activo");
     }
+
+    public void EntryGame()
+    {
+        if (panelOpciones.activeSelf)
+            panelOpciones.SetActive(false);
+    }
 }
