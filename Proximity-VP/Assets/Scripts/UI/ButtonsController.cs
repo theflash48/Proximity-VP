@@ -1,22 +1,37 @@
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public class ButtonsController : MonoBehaviour
 {
-    //public string currentScenename = SceneManager.GetActiveScene().name;
-
-    public void GoToMainMenu(string currentScenename)
+    public void GoToMainMenu()
     {
-        Time.timeScale = 1;
-        currentScenename = SceneManager.GetActiveScene().name;
-        SceneManager.LoadScene(currentScenename);
+        Time.timeScale = 1f;
+
+        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+            NetworkManager.Singleton.Shutdown();
+
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+
+        SceneManager.LoadScene("MainMenu");
     }
 
-    public void Restart ()
+    public void GoToMainMenu(string _)
     {
-        Time.timeScale = 1;
-        // Reinicia la escena
-        string currentScenename = SceneManager.GetActiveScene().name;
-        SceneManager.LoadScene(currentScenename);
+        GoToMainMenu();
+    }
+
+    public void Restart()
+    {
+        Time.timeScale = 1f;
+
+        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+            NetworkManager.Singleton.Shutdown();
+
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 }

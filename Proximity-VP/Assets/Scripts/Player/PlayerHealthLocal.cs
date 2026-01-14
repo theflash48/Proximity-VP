@@ -7,39 +7,38 @@ public class PlayerHealthLocal : MonoBehaviour
     [Header("Health Settings")]
     public int maxLives = 2;
     public int currentLives;
-    
+
     [Header("Respawn Settings")]
     public float respawnDelay = 3f;
 
     public GameObject gameManager;
     public TimerLocal timer;
-    
-    [Header("References")]
+
     private PlayerControllerLocal playerController;
     private Rigidbody rb;
     private Collider playerCollider;
-    
+
     [Header("Death Screen")]
-    public Image fadeImage; // Asigna una UI Image negra que cubra toda la cámara del jugador
+    public Image fadeImage;
     public float fadeDuration = 1f;
-    
+
     [Header("Visual Feedback")]
-    public GameObject deathEffect; // Efecto de partículas al morir (opcional)
-    
+    public GameObject deathEffect;
+
     private bool isDead = false;
-    private GameObject shooter; // Referencia a quien disparó la bala
 
     void Start()
     {
         currentLives = maxLives;
+
         playerController = GetComponent<PlayerControllerLocal>();
         rb = GetComponent<Rigidbody>();
         playerCollider = GetComponent<Collider>();
-        
+
         gameManager = GameObject.Find("GameManager");
-        timer = gameManager.GetComponent<TimerLocal>();
-        
-        // Asegurarse de que la pantalla empiece transparente
+        if (gameManager != null)
+            timer = gameManager.GetComponent<TimerLocal>();
+
         if (fadeImage != null)
         {
             Color c = fadeImage.color;
@@ -47,24 +46,20 @@ public class PlayerHealthLocal : MonoBehaviour
             fadeImage.color = c;
             fadeImage.gameObject.SetActive(false);
         }
-        
-        // Registrar jugador en el SpawnManager
+
         if (SpawnManager.Instance != null)
-        {
             SpawnManager.Instance.RegisterPlayer(gameObject);
-        }
     }
 
     public void TakeDamage()
     {
-        if (!timer.gameStarted || timer.remainingTime <= 0)
-        {
-            return;
-        }
-        
+        if (timer == null) return;
+        if (!timer.gameStarted || timer.remainingTime <= 0f) return;
+        if (isDead) return;
+
         currentLives--;
-        GetComponent<PlayerHUD>()._fHealthUI(currentLives, maxLives);
-        Debug.Log(gameObject.name + " vidas restantes: " + currentLives);
+        var hud = GetComponent<PlayerHUD>();
+        if (hud != null) hud._fHealthUI(currentLives, maxLives);
 
         if (currentLives <= 0)
         {
@@ -72,54 +67,38 @@ public class PlayerHealthLocal : MonoBehaviour
         }
         else
         {
-            // Feedback visual de daño (opcional)
-            StartCoroutine(DamageFlash());
+            if (playerController != null)
+                playerController.StartDamageBlink();
         }
     }
 
     void Die()
     {
         isDead = true;
-        Debug.Log(gameObject.name + " ha muerto!");
 
-        // Efecto de muerte
         if (deathEffect != null)
-        {
             Instantiate(deathEffect, transform.position, Quaternion.identity);
-        }
 
-        // Deshabilitar controles y físicas
         if (playerController != null)
-        {
             playerController.enabled = false;
-        }
-        
+
         if (rb != null)
         {
             rb.linearVelocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
         }
 
-        // Ocultar el jugador
-        MeshRenderer meshRenderer = GetComponent<MeshRenderer>();
-        if (meshRenderer != null)
-        {
-            meshRenderer.enabled = false;
-        }
+        var mr = GetComponent<MeshRenderer>();
+        if (mr != null) mr.enabled = false;
 
-        // Deshabilitar colisiones
         if (playerCollider != null)
-        {
             playerCollider.enabled = false;
-        }
 
-        // Iniciar fade a negro y respawn
         StartCoroutine(DeathSequence());
     }
 
     IEnumerator DeathSequence()
     {
-        // Fade a negro
         if (fadeImage != null)
         {
             fadeImage.gameObject.SetActive(true);
@@ -138,13 +117,10 @@ public class PlayerHealthLocal : MonoBehaviour
             fadeImage.color = c;
         }
 
-        // Esperar un momento con pantalla negra
-        yield return new WaitForSeconds(respawnDelay - fadeDuration);
+        yield return new WaitForSeconds(Mathf.Max(0.05f, respawnDelay - fadeDuration));
 
-        // Respawnear
         Respawn();
 
-        // Fade desde negro a transparente
         if (fadeImage != null)
         {
             float elapsedTime = 0f;
@@ -166,69 +142,42 @@ public class PlayerHealthLocal : MonoBehaviour
 
     void Respawn()
     {
-        // Restaurar vidas
         currentLives = maxLives;
-        GetComponent<PlayerHUD>()._fHealthUI(currentLives, maxLives);
+
+        var hud = GetComponent<PlayerHUD>();
+        if (hud != null) hud._fHealthUI(currentLives, maxLives);
+
         isDead = false;
 
-        // Obtener spawn point más lejano
         Transform spawnPoint = null;
         if (SpawnManager.Instance != null)
-        {
             spawnPoint = SpawnManager.Instance.GetFarthestSpawnPoint(gameObject);
-        }
 
-        // Mover jugador al spawn point
         if (spawnPoint != null)
         {
             transform.position = spawnPoint.position;
             transform.rotation = spawnPoint.rotation;
         }
 
-        // Resetear físicas
         if (rb != null)
         {
             rb.linearVelocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
         }
 
-        // Reactivar controles
         if (playerController != null)
-        {
             playerController.enabled = true;
-        }
 
-        // Reactivar colisiones
         if (playerCollider != null)
-        {
             playerCollider.enabled = true;
-        }
 
-        Debug.Log(gameObject.name + " ha respawneado!");
-    }
-
-    // Efecto visual de daño (parpadeo)
-    IEnumerator DamageFlash()
-    {
-        MeshRenderer meshRenderer = GetComponent<MeshRenderer>();
-        if (meshRenderer != null)
-        {
-            for (int i = 0; i < 3; i++)
-            {
-                meshRenderer.enabled = false;
-                yield return new WaitForSeconds(0.1f);
-                meshRenderer.enabled = true;
-                yield return new WaitForSeconds(0.1f);
-            }
-        }
+        if (playerController != null)
+            playerController.StartDamageBlink();
     }
 
     void OnDestroy()
     {
-        // Desregistrar jugador del SpawnManager
         if (SpawnManager.Instance != null)
-        {
             SpawnManager.Instance.UnregisterPlayer(gameObject);
-        }
     }
 }

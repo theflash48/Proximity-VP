@@ -214,9 +214,10 @@ GameObject:
   - component: {fileID: 85905458}
   - component: {fileID: 85905457}
   - component: {fileID: 85905459}
-  - component: {fileID: 85905460}
+  - component: {fileID: 85905463}
   - component: {fileID: 85905461}
   - component: {fileID: 85905462}
+  - component: {fileID: 85905464}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -295,22 +296,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 576eb7340bbd51b4e92b361d6906ef96, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &85905460
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 85905456}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a5c9f51eb5ccaf7428fe0132f016cd9f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  timerText: {fileID: 1795279700}
-  remainingTime: 20
-  uiCanvas: {fileID: 663392480}
-  gameStarted: 0
 --- !u!114 &85905461
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -337,7 +322,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   localPlayers: []
   onlinePlayers: []
-  playerOrder: []
   endScreen: {fileID: 1408137839}
   scoreBanners:
   - {fileID: 8847041535466667719, guid: a67708bc7805f214e997bf644e5eb2a9, type: 3}
@@ -347,6 +331,47 @@ MonoBehaviour:
   resultUploader: {fileID: 0}
   currentMapId: 1
   joinCodeDisplay: {fileID: 1761826912}
+--- !u!114 &85905463
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 85905456}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 2916413041
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 0
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
+--- !u!114 &85905464
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 85905456}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f3ed1c23b62aae043929e58dcb968f48, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
+  timerText: {fileID: 1795279700}
+  startingTime: 60
+  uiCanvas: {fileID: 663392480}
 --- !u!1 &334581744
 GameObject:
   m_ObjectHideFlags: 0
@@ -767,6 +792,8 @@ MonoBehaviour:
   - {fileID: 1063790062}
   - {fileID: 652774079}
   activePlayers: []
+  autoDiscoverOnlinePlayers: 1
+  discoverInterval: 0.5
 --- !u!4 &574531987
 Transform:
   m_ObjectHideFlags: 0
@@ -1226,6 +1253,7 @@ MonoBehaviour:
   - {fileID: 8400000, guid: 7f5a99bcb25eef142b8616a8fb619b1f, type: 2}
   - {fileID: 8400000, guid: 71153e53e6280a0499e1942767825b03, type: 2}
   - {fileID: 8400000, guid: d01997380d1cb994aaa6b9f1598c10a8, type: 2}
+  refreshInterval: 0.25
 --- !u!4 &904416858
 Transform:
   m_ObjectHideFlags: 0
@@ -1253,7 +1281,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 13947d86b19724b40bc1f25b6b3cd287, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cameraAssigner: {fileID: 904416857}
 --- !u!1 &927717622
 GameObject:
   m_ObjectHideFlags: 0
@@ -1800,7 +1827,7 @@ Canvas:
   m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
-  m_SortingOrder: -1
+  m_SortingOrder: 10
   m_TargetDisplay: 0
 --- !u!224 &1371178811
 RectTransform:
@@ -1815,10 +1842,10 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1578405905}
-  - {fileID: 1795279699}
   - {fileID: 663392481}
-  - {fileID: 1408137840}
   - {fileID: 1735529587}
+  - {fileID: 1795279699}
+  - {fileID: 1408137840}
   - {fileID: 1761826910}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -1839,17 +1866,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e48c3264e156138479b3e47c9fa25eb6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  playerViews:
-  - {fileID: 408533432}
-  - {fileID: 480716175}
-  - {fileID: 781614342}
-  - {fileID: 1438994999}
-  playerLabels: []
-  playerColors:
-  - {r: 1, g: 0, b: 0, a: 1}
-  - {r: 0, g: 0, b: 1, a: 1}
-  - {r: 0, g: 1, b: 0, a: 1}
-  - {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
 --- !u!1 &1408137839
 GameObject:
   m_ObjectHideFlags: 0

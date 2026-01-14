@@ -307,8 +307,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a5c9f51eb5ccaf7428fe0132f016cd9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   timerText: {fileID: 1795279700}
-  remainingTime: 20
+  remainingTime: 60
   uiCanvas: {fileID: 663392480}
   gameStarted: 0
 --- !u!114 &85905461
@@ -346,6 +347,7 @@ MonoBehaviour:
   scorePanel: {fileID: 1913609534}
   resultUploader: {fileID: 0}
   currentMapId: 1
+  joinCodeDisplay: {fileID: 0}
 --- !u!1 &334581744
 GameObject:
   m_ObjectHideFlags: 0
@@ -620,6 +622,8 @@ MonoBehaviour:
   - {fileID: 1063790062}
   - {fileID: 652774079}
   activePlayers: []
+  autoDiscoverOnlinePlayers: 1
+  discoverInterval: 0.5
 --- !u!4 &574531987
 Transform:
   m_ObjectHideFlags: 0

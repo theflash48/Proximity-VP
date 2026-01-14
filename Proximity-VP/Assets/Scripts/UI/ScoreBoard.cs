@@ -1,19 +1,16 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using UnityEngine.InputSystem;
 
 public class ScoreBoard : MonoBehaviour
 {
-
-    //TIM ES EL UNICO CODIGO QUE TE TOQUE NO ME MATES
-    // Listas de jugadores
     public List<PlayerControllerLocal> localPlayers = new List<PlayerControllerLocal>();
     public List<PlayerControllerOnline> onlinePlayers = new List<PlayerControllerOnline>();
-
-    public List<GameObject> playerOrder = new List<GameObject>();
 
     [Header("UI")]
     public GameObject endScreen;
@@ -30,16 +27,24 @@ public class ScoreBoard : MonoBehaviour
     void OnEnable()
     {
         TimerLocal.onTryStartGame += LocatePlayers;
-        TimerLocal.onEndGame      += PrintScores;
-        PlayerControllerLocal.onScoreUP       += UpdateScores;
+        TimerLocal.onEndGame += PrintScores;
+
+        TimerOnline.onTryStartGame += LocatePlayers;
+        TimerOnline.onEndGame += PrintScores;
+
+        PlayerControllerLocal.onScoreUP += UpdateScores;
         PlayerControllerOnline.onScoreUPOnline += UpdateScores;
     }
 
     void OnDisable()
     {
         TimerLocal.onTryStartGame -= LocatePlayers;
-        TimerLocal.onEndGame      -= PrintScores;
-        PlayerControllerLocal.onScoreUP       -= UpdateScores;
+        TimerLocal.onEndGame -= PrintScores;
+
+        TimerOnline.onTryStartGame -= LocatePlayers;
+        TimerOnline.onEndGame -= PrintScores;
+
+        PlayerControllerLocal.onScoreUP -= UpdateScores;
         PlayerControllerOnline.onScoreUPOnline -= UpdateScores;
     }
 
@@ -48,249 +53,229 @@ public class ScoreBoard : MonoBehaviour
         if (endScreen != null)
             endScreen.SetActive(false);
 
-        if (FindFirstObjectByType<NetworkUIManager>() != null)
-            joinCodeDisplay.text = "JoinCode: " + FindFirstObjectByType<NetworkUIManager>().joinCode;
+        var netUi = FindFirstObjectByType<NetworkUIManager>();
+        if (netUi != null && joinCodeDisplay != null)
+            joinCodeDisplay.text = "JoinCode: " + netUi.joinCode;
+    }
+
+    private bool IsOnlineSession()
+    {
+        return NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening;
     }
 
     private void LocatePlayers()
     {
         localPlayers.Clear();
         onlinePlayers.Clear();
-        playerOrder.Clear();
 
-        GameObject[] players = GameObject.FindGameObjectsWithTag("Player");
+        var players = GameObject.FindGameObjectsWithTag("Player");
+        if (players == null || players.Length == 0)
+            return;
 
         foreach (var p in players)
-            playerOrder.Add(p);
-
-        if (players.Length == 0)
         {
-            Debug.LogError("ScoreBoard: no hay jugadores en la escena.");
-            return;
-        }
+            if (p == null) continue;
 
-        if (players[0].GetComponent<PlayerControllerLocal>() != null)
-        {
-            foreach (var p in players)
+            var pcOnline = p.GetComponent<PlayerControllerOnline>();
+            if (pcOnline != null && pcOnline.enabled)
             {
-                var pc = p.GetComponent<PlayerControllerLocal>();
-                if (pc != null)
-                    localPlayers.Add(pc);
+                onlinePlayers.Add(pcOnline);
+                continue;
+            }
+
+            var pcLocal = p.GetComponent<PlayerControllerLocal>();
+            if (pcLocal != null && pcLocal.enabled)
+            {
+                localPlayers.Add(pcLocal);
             }
         }
-        else if (players[0].GetComponent<PlayerControllerOnline>() != null)
-        {
-            foreach (var p in players)
-            {
-                var pc = p.GetComponent<PlayerControllerOnline>();
-                if (pc != null)
-                    onlinePlayers.Add(pc);
-            }
-        }
-        else
-        {
-            Debug.LogError("ScoreBoard: los jugadores no tienen ni PlayerControllerLocal ni PlayerControllerOnline.");
-            return;
-        }
+    }
 
-        UpdateScores();
+    private void SetPlace(PlayerHUD hud, int i)
+    {
+        if (hud == null) return;
+
+        switch (i)
+        {
+            case 0: hud._cPlace.text = "1st"; break;
+            case 1: hud._cPlace.text = "2nd"; break;
+            case 2: hud._cPlace.text = "3rd"; break;
+            case 3: hud._cPlace.text = "4th"; break;
+            default: hud._cPlace.text = (i + 1) + "th"; break;
+        }
     }
 
     void UpdateScores()
     {
-        // LOCAL
-        if (localPlayers.Count > 0)
+        if (localPlayers.Count == 0 && onlinePlayers.Count == 0)
+            LocatePlayers();
+
+        bool online = IsOnlineSession();
+
+        if (online && onlinePlayers.Count > 0)
         {
-            localPlayers = localPlayers.OrderByDescending(p => p.score).ToList();
-
-            for (int i = 0; i < localPlayers.Count; i++)
-            {
-                var hud = localPlayers[i].GetComponent<PlayerHUD>();
-                if (hud == null) continue;
-
-                switch (i)
-                {
-                    case 0: hud._cPlace.text = "1st"; break;
-                    case 1: hud._cPlace.text = "2nd"; break;
-                    case 2: hud._cPlace.text = "3rd"; break;
-                    case 3: hud._cPlace.text = "4th"; break;
-                    default: hud._cPlace.text = (i + 1) + "th"; break;
-                }
-            }
-        }
-        // ONLINE
-        else if (onlinePlayers.Count > 0)
-        {
-            onlinePlayers = onlinePlayers.OrderByDescending(p => p.score).ToList();
-
+            onlinePlayers = onlinePlayers.Where(p => p != null).OrderByDescending(p => p.score).ToList();
             for (int i = 0; i < onlinePlayers.Count; i++)
-            {
-                var hud = onlinePlayers[i].GetComponent<PlayerHUD>();
-                if (hud == null) continue;
+                SetPlace(onlinePlayers[i].GetComponent<PlayerHUD>(), i);
+            return;
+        }
 
-                switch (i)
-                {
-                    case 0: hud._cPlace.text = "1st"; break;
-                    case 1: hud._cPlace.text = "2nd"; break;
-                    case 2: hud._cPlace.text = "3rd"; break;
-                    case 3: hud._cPlace.text = "4th"; break;
-                    default: hud._cPlace.text = (i + 1) + "th"; break;
-                }
-            }
+        if (!online && localPlayers.Count > 0)
+        {
+            localPlayers = localPlayers.Where(p => p != null).OrderByDescending(p => p.score).ToList();
+            for (int i = 0; i < localPlayers.Count; i++)
+                SetPlace(localPlayers[i].GetComponent<PlayerHUD>(), i);
         }
     }
 
-    int playersNameIndex;
+    private string GetOnlineName(GameObject player)
+    {
+        var id = player.GetComponent<PlayerIdentityOnline>();
+        if (id != null && id.Username.Value.Length > 0)
+            return id.Username.Value.ToString();
 
+        // fallback
+        return "Player";
+    }
 
     public void PrintScores()
     {
+        LocatePlayers();
+        UpdateScores();
+
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+
         if (endScreen != null)
             endScreen.SetActive(true);
 
-        // Limpiar panel
-        foreach (Transform child in scorePanel.transform)
-            Destroy(child.gameObject);
-
-        // LOCAL
-        if (localPlayers.Count > 0 && localPlayers[0] != null)
+        if (scorePanel != null)
         {
-            localPlayers = localPlayers.OrderByDescending(p => p.score).ToList();
-
-            for (int i = 0; i < localPlayers.Count; i++)
-            {
-                GameObject ban;
-                if (i >= 3)
-                    ban = Object.Instantiate(scoreBanners[3]);
-                else
-                    ban = Object.Instantiate(scoreBanners[i]);
-
-                ban.transform.SetParent(scorePanel.transform, false);
-
-                for (int b = 0; b < playerOrder.Count; b++)
-                {
-                    var pc = playerOrder[b].GetComponent<PlayerControllerLocal>();
-                    if (pc != null && pc.score == localPlayers[i].score)
-                    {
-                        playersNameIndex = b + 1;
-                        break;
-                    }
-                }
-
-                string posStr = (i == 0) ? "1st" :
-                                (i == 1) ? "2nd" :
-                                (i == 2) ? "3rd" :
-                                "4th";
-
-                ban.GetComponent<ScoreBanner>().UpdateBanner(
-                    posStr,
-                    "Player " + playersNameIndex,
-                    localPlayers[i].score + " Kills"
-                );
-            }
+            foreach (Transform child in scorePanel.transform)
+                Destroy(child.gameObject);
         }
-        // ONLINE
-        else if (onlinePlayers.Count > 0 && onlinePlayers[0] != null)
+
+        bool online = IsOnlineSession();
+
+        if (online && onlinePlayers.Count > 0)
         {
-            onlinePlayers = onlinePlayers.OrderByDescending(p => p.score).ToList();
+            onlinePlayers = onlinePlayers.Where(p => p != null).OrderByDescending(p => p.score).ToList();
 
             for (int i = 0; i < onlinePlayers.Count; i++)
             {
-                GameObject ban;
-                if (i >= 3)
-                    ban = Object.Instantiate(scoreBanners[3]);
-                else
-                    ban = Object.Instantiate(scoreBanners[i]);
-
+                GameObject ban = Instantiate(i >= 3 ? scoreBanners[3] : scoreBanners[i]);
                 ban.transform.SetParent(scorePanel.transform, false);
-
-                for (int b = 0; b < playerOrder.Count; b++)
-                {
-                    var pc = playerOrder[b].GetComponent<PlayerControllerOnline>();
-                    if (pc != null && pc.score == onlinePlayers[i].score)
-                    {
-                        playersNameIndex = b + 1;
-                        break;
-                    }
-                }
 
                 string posStr = (i == 0) ? "1st" :
                                 (i == 1) ? "2nd" :
-                                (i == 2) ? "3rd" :
-                                "4th";
+                                (i == 2) ? "3rd" : "4th";
+
+                string username = GetOnlineName(onlinePlayers[i].gameObject);
 
                 ban.GetComponent<ScoreBanner>().UpdateBanner(
                     posStr,
-                    "Player " + playersNameIndex,
+                    username,
                     onlinePlayers[i].score + " Kills"
                 );
             }
         }
+        else if (!online && localPlayers.Count > 0)
+        {
+            localPlayers = localPlayers.Where(p => p != null).OrderByDescending(p => p.score).ToList();
 
-        var gm = FindFirstObjectByType<GameModeManager>();
-        if (gm != null &&
-            gm.conection == GameModeManager.conectionType.online &&
-            AccountSession.Instance != null &&
-            AccountSession.Instance.IsLoggedIn &&
+            for (int i = 0; i < localPlayers.Count; i++)
+            {
+                GameObject ban = Instantiate(i >= 3 ? scoreBanners[3] : scoreBanners[i]);
+                ban.transform.SetParent(scorePanel.transform, false);
+
+                string posStr = (i == 0) ? "1st" :
+                                (i == 1) ? "2nd" :
+                                (i == 2) ? "3rd" : "4th";
+
+                var pi = localPlayers[i].GetComponent<PlayerInput>();
+                string label = (pi != null) ? ("Player " + (pi.playerIndex + 1)) : "Player";
+
+                ban.GetComponent<ScoreBanner>().UpdateBanner(
+                    posStr,
+                    label,
+                    localPlayers[i].score + " Kills"
+                );
+            }
+        }
+
+        // Subida a BD: SOLO HOST
+        if (online &&
+            NetworkManager.Singleton != null &&
+            NetworkManager.Singleton.IsServer &&
             resultUploader != null)
         {
-            StartCoroutine(SendResultsCoroutine());
+            StartCoroutine(SendResultsCoroutineHostOnly());
         }
     }
 
-    IEnumerator SendResultsCoroutine()
+    IEnumerator SendResultsCoroutineHostOnly()
     {
-        // 1) crear partida en servidor si aún no existe
+        // GameId
         if (resultUploader.CurrentGameId <= 0)
         {
-            int totalPlayers = localPlayers.Count > 0 ? localPlayers.Count : onlinePlayers.Count;
+            int totalPlayers = onlinePlayers.Count;
             yield return resultUploader.StartGameOnServer(totalPlayers, currentMapId);
         }
 
-        // 2) preparar datos
+        // Winner por score
+        int winnerAccId = 0;
+        int bestScore = int.MinValue;
+
         List<GameResultUploader.PlayerResult> players = new List<GameResultUploader.PlayerResult>();
 
-        if (localPlayers.Count > 0)
+        foreach (var p in onlinePlayers)
         {
-            foreach (var p in localPlayers)
-            {
-                players.Add(new GameResultUploader.PlayerResult
-                {
-                    acc_id = AccountSession.Instance.AccId,
-                    kills  = p.score,
-                    deaths = 0,
-                    is_host = 1
-                });
-            }
-        }
-        else if (onlinePlayers.Count > 0)
-        {
-            for (int i = 0; i < onlinePlayers.Count; i++)
-            {
-                var p = onlinePlayers[i];
-                players.Add(new GameResultUploader.PlayerResult
-                {
-                    acc_id = AccountSession.Instance.AccId, // simplificado
-                    kills  = p.score,
-                    deaths = 0,
-                    is_host = (i == 0) ? 1 : 0      // host = primer jugador
-                });
-            }
-        }
+            if (p == null) continue;
 
-        int winnerAccId = AccountSession.Instance.AccId;
+            var id = p.GetComponent<PlayerIdentityOnline>();
+            int accId = (id != null) ? id.AccId.Value : 0;
+
+            if (p.score > bestScore)
+            {
+                bestScore = p.score;
+                winnerAccId = accId;
+            }
+
+            int isHost = 0;
+            var no = p.GetComponent<NetworkObject>();
+            if (no != null && no.OwnerClientId == 0) isHost = 1;
+
+            players.Add(new GameResultUploader.PlayerResult
+            {
+                acc_id = accId,
+                kills = p.score,
+                deaths = 0,
+                is_host = isHost
+            });
+        }
 
         yield return resultUploader.SendResults(winnerAccId, players);
     }
 
-    // Botones UI
     public void ReloadScene()
     {
+        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+            NetworkManager.Singleton.Shutdown();
+
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
     public void BackToMain()
     {
+        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+            NetworkManager.Singleton.Shutdown();
+
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+
         SceneManager.LoadScene("MainMenu");
     }
 }

@@ -1,32 +1,31 @@
-using Unity.Netcode;
 using System.Collections;
-using System.Collections.Generic;
-using System.Timers;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-// Cambiado nombre del archivo/clase a PlayerControllerOnline ya que el
-// otro se llamaba PlayerControllerLocal y este PlayerController, solo
-// por consistencia de nombres, por lo que se ha actualizado en el resto
-// de scripts 
 public class PlayerControllerOnline : NetworkBehaviour
 {
-    [Header("Movement Settings")] public float moveSpeed;
+    [Header("Movement Settings")]
+    public float moveSpeed;
     public float mouseSensitivity;
     public float maxLookAngle;
     public float groundCheckDistance = 0.1f;
     public LayerMask groundLayer = 1;
+
+    [Header("Reveal Settings")]
+    public float timeVisible = 2f;
+
+    [Header("Cooldown")]
+    public float timeCooldownMax = 0.5f;
+    public float timeCooldown = 0f;
+
+    [Header("Score")]
     public int score = 0;
 
     public delegate void OnScoreUPOnline();
-
     public static event OnScoreUPOnline onScoreUPOnline;
 
-
-    Rigidbody rb;
-    MeshRenderer meshRenderer;
-    PlayerInput playerInput;
-
+    [Header("References")]
     public GameObject playerCamera;
     public Camera cameraComponent;
     public Transform groundCheck;
@@ -34,268 +33,319 @@ public class PlayerControllerOnline : NetworkBehaviour
     public Shoot shootScript;
     public LineRenderer lineRender;
 
-
-
+    [Header("Inputs")]
     public Vector2 moveInput;
     public Vector2 lookInput;
-    float xRotation = 0f;
-    float yRotation = 0f;
-    bool isGrounded;
-    public bool isVisible = false;
-    public float timeVisible = 5f;
-    public float timeToInvisible = 0f;
-    public float timeCooldownMax = 10f;
-    public float timeCooldown = 0f;
+
+    private Rigidbody rb;
+    private MeshRenderer meshRenderer;
+    private PlayerInput playerInput;
+    private PlayerHUD hud;
+    private PlayerHealthOnline health;
+
+    private float xRotation = 0f;
+    private float yRotation = 0f;
+    private bool isGrounded;
+
+    private Coroutine tracerRoutine;
+
+    private bool blinkActive;
+    private Coroutine blinkRoutine;
+
+    private NetworkVariable<int> scoreNet = new NetworkVariable<int>(
+        0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
+    private NetworkVariable<float> pitchNet = new NetworkVariable<float>(
+        0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
+    private NetworkVariable<double> revealUntil = new NetworkVariable<double>(
+        0d, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
     void Awake()
     {
-        //Rigidbody
         rb = GetComponent<Rigidbody>();
-
-        //MeshRenderer
         meshRenderer = GetComponent<MeshRenderer>();
-        meshRenderer.enabled = false;
-
-        //InputSystem
         playerInput = GetComponent<PlayerInput>();
+        hud = GetComponent<PlayerHUD>();
+        health = GetComponent<PlayerHealthOnline>();
 
-        //Cursor
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+        if (meshRenderer != null)
+            meshRenderer.enabled = false;
 
-        //Shoot
-        shootScript = GetComponent<Shoot>();
-        lineRender = firingPoint.GetComponent<LineRenderer>();
-        lineRender.enabled = false;
-        lineRender.useWorldSpace = true;
-        lineRender.positionCount = 2;
-
-        // ---------- NUEVO: buscar cámara propia ----------
         if (cameraComponent == null)
-        {
             cameraComponent = GetComponentInChildren<Camera>(true);
-        }
 
         if (cameraComponent != null && playerCamera == null)
-        {
             playerCamera = cameraComponent.gameObject;
-        }
-        // -------------------------------------------------
-    }
 
+        if (shootScript == null)
+            shootScript = GetComponent<Shoot>();
 
-    public void ScoreUP()
-    {
-        score++;
+        if (lineRender == null && firingPoint != null)
+            lineRender = firingPoint.GetComponent<LineRenderer>();
 
-        var hud = GetComponent<PlayerHUD>();
-        if (hud != null)
+        if (lineRender != null)
         {
-            hud._fUpdateScore(score);
+            lineRender.enabled = false;
+            lineRender.useWorldSpace = true;
+            lineRender.positionCount = 2;
         }
-
-        onScoreUPOnline?.Invoke();
     }
-
 
     public override void OnNetworkSpawn()
     {
-        // Asegurar referencias
-        if (cameraComponent == null)
-            cameraComponent = GetComponentInChildren<Camera>(true);
-        if (cameraComponent != null && playerCamera == null)
-            playerCamera = cameraComponent.gameObject;
-        if (playerInput == null)
-            playerInput = GetComponent<PlayerInput>();
-
-        /*if (IsOwner)
-        {
-            // Activar input y cámara SOLO para el dueño en esta máquina
-            if (playerInput != null)
-                playerInput.enabled = true;
-
-            if (cameraComponent != null)
-            {
-                cameraComponent.enabled = true;
-
-                var listener = cameraComponent.GetComponent<AudioListener>();
-                if (listener != null) listener.enabled = true;
-
-                // Asegurar que la cámara está activa
-                playerCamera.SetActive(true);
-            }
-        }
-        else
-        {
-            // Desactivar input y cámara para los jugadores remotos en este cliente
-            if (playerInput != null)
-                playerInput.enabled = false;
-
-            if (cameraComponent != null)
-            {
-                cameraComponent.enabled = false;
-
-                var listener = cameraComponent.GetComponent<AudioListener>();
-                if (listener != null) listener.enabled = false;
-            }
-        }*/
-        
-        // 1) El INPUT sigue siendo sólo del dueño
         if (playerInput != null)
             playerInput.enabled = IsOwner;
 
-        // 2) La CÁMARA debe renderizar SIEMPRE en todos los clientes
         if (cameraComponent != null)
         {
             cameraComponent.enabled = true;
 
-            // 3) Pero el AUDIO sólo para el dueño (evitamos ecos y mezcla rara)
             var listener = cameraComponent.GetComponent<AudioListener>();
             if (listener != null)
                 listener.enabled = IsOwner;
 
-            playerCamera.SetActive(true);
+            if (playerCamera != null)
+                playerCamera.SetActive(true);
         }
+
+        if (IsOwner)
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
+
+        score = scoreNet.Value;
+        if (hud != null)
+            hud._fUpdateScore(score);
+
+        scoreNet.OnValueChanged += OnScoreChanged;
     }
 
-public void OnMove(InputValue value)
+    public override void OnNetworkDespawn()
+    {
+        scoreNet.OnValueChanged -= OnScoreChanged;
+    }
+
+    private void OnScoreChanged(int previous, int current)
+    {
+        score = current;
+
+        if (hud != null)
+            hud._fUpdateScore(score);
+
+        onScoreUPOnline?.Invoke();
+    }
+
+    public void OnMove(InputValue value)
     {
         moveInput = value.Get<Vector2>();
     }
 
-public void OnLook(InputValue value)
-{
-    if (playerInput != null && playerInput.currentControlScheme == "Keyboard&Mouse")
-        mouseSensitivity = 10f;
-    else
-        mouseSensitivity = 100f;
-
-    lookInput = value.Get<Vector2>();
-}
-
-
-public void OnShoot(InputValue value)
-{
-    if (timeCooldown < 0)
+    public void OnLook(InputValue value)
     {
-        // Solo el dueño puede disparar
-        if (!IsOwner) return;
-        if (shootScript == null || playerCamera == null) return;
+        if (playerInput != null && playerInput.currentControlScheme == "Keyboard&Mouse")
+            mouseSensitivity = 10f;
+        else
+            mouseSensitivity = 100f;
 
-        Debug.Log("Disparando!");
-
-        bool hitPlayer = shootScript.ShootBullet(playerCamera);
-        if (hitPlayer)
-        {
-            ScoreUP();
-        }
-
-        if (lineRender != null && firingPoint != null)
-        {
-            lineRender.SetPosition(0, firingPoint.transform.position);
-            lineRender.SetPosition(1, firingPoint.transform.position + playerCamera.transform.forward * 100);
-        }
-
-        isVisible = true;
-        timeCooldown = timeCooldownMax;
-        timeToInvisible = timeVisible;
-        GetComponent<PlayerHUD>()._fReloadUI(timeCooldownMax);
+        lookInput = value.Get<Vector2>();
     }
-}
 
-
-    private void Update()
+    public void OnShoot(InputValue value)
     {
-        // Solo el dueño ejecuta la lógica local
+        if (!IsOwner) return;
+        if (timeCooldown > 0f) return;
+
+        if (playerCamera == null) return;
+
+        // Sonido/feedback local (sin daño online desde aquí)
+        if (shootScript != null)
+            shootScript.ShootBullet(playerCamera);
+
+        Vector3 origin = firingPoint != null ? firingPoint.transform.position : playerCamera.transform.position;
+        Vector3 dir = playerCamera.transform.forward;
+
+        ShootServerRpc(origin, dir, timeVisible);
+
+        timeCooldown = timeCooldownMax;
+        if (hud != null)
+            hud._fReloadUI(timeCooldownMax);
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void ShootServerRpc(Vector3 origin, Vector3 dir, float visibleDuration, ServerRpcParams rpcParams = default)
+    {
+        if (NetworkManager.Singleton == null) return;
+
+        // Reveal del shooter (este mismo player)
+        double now = NetworkManager.Singleton.ServerTime.Time;
+        revealUntil.Value = now + Mathf.Max(0f, visibleDuration);
+
+        Vector3 end = origin + dir * 100f;
+
+        if (Physics.Raycast(origin, dir, out RaycastHit hit, 100f))
+        {
+            end = hit.point;
+
+            var target = hit.collider.GetComponentInParent<PlayerHealthOnline>();
+            if (target != null && target.OwnerClientId != rpcParams.Receive.SenderClientId)
+            {
+                target.ApplyDamageFromServer(rpcParams.Receive.SenderClientId);
+            }
+        }
+
+        ShootVfxClientRpc(origin, end);
+    }
+
+    [ClientRpc]
+    private void ShootVfxClientRpc(Vector3 start, Vector3 end)
+    {
+        if (lineRender == null) return;
+
+        lineRender.SetPosition(0, start);
+        lineRender.SetPosition(1, end);
+
+        if (tracerRoutine != null)
+            StopCoroutine(tracerRoutine);
+
+        tracerRoutine = StartCoroutine(TracerFlash());
+    }
+
+    private IEnumerator TracerFlash()
+    {
+        if (lineRender == null) yield break;
+
+        lineRender.enabled = true;
+        yield return new WaitForSeconds(0.05f);
+        lineRender.enabled = false;
+    }
+
+    void Update()
+    {
+        ApplyRemotePitch();
+        ApplyVisibility();
+
         if (!IsOwner) return;
 
         HandleLook();
         CheckGrounded();
-        VisibilityHandler();
         ShootCooldown();
     }
-    
-    private void FixedUpdate()
-    {
-        // Solo el dueño mueve su personaje
-        if (!IsOwner) return;
 
+    void FixedUpdate()
+    {
+        if (!IsOwner) return;
         HandleMovement();
     }
 
     void HandleMovement()
     {
-        // Calcular dirección de movimiento
         Vector3 moveDirection = transform.right * moveInput.x + transform.forward * moveInput.y;
-
-        // Aplicar movimiento al Rigidbody
         Vector3 targetVelocity = moveDirection * moveSpeed;
-        targetVelocity.y = rb.linearVelocity.y;
 
-        // Suavizar el movimiento
-        rb.linearVelocity = Vector3.Lerp(rb.linearVelocity, targetVelocity, Time.fixedDeltaTime * 10f);
+        if (rb != null)
+        {
+            targetVelocity.y = rb.linearVelocity.y;
+            rb.linearVelocity = Vector3.Lerp(rb.linearVelocity, targetVelocity, Time.fixedDeltaTime * 10f);
+        }
     }
 
     void CheckGrounded()
     {
         if (groundCheck != null)
-        {
             isGrounded = Physics.CheckSphere(groundCheck.position, groundCheckDistance, groundLayer);
-        }
         else
-        {
-            // Fallback: raycast hacia abajo desde el centro del jugador
             isGrounded = Physics.Raycast(transform.position, Vector3.down, groundCheckDistance + 0.1f, groundLayer);
-        }
     }
 
     void HandleLook()
     {
+        if (cameraComponent == null) return;
+
         float mouseX = lookInput.x * mouseSensitivity * Time.deltaTime;
         float mouseY = lookInput.y * mouseSensitivity * Time.deltaTime;
 
-        // Rotación vertical (arriba/abajo)
         xRotation -= mouseY;
         xRotation = Mathf.Clamp(xRotation, -maxLookAngle, maxLookAngle);
 
-        //Rotacion horizontal (izquierda(derecha)
         yRotation += mouseX;
 
-        //Rotacion en X
         cameraComponent.transform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
-        //Rotación horizontal (izquierda/derecha) y mas control en la rotacion en Y
         transform.rotation = Quaternion.Euler(0f, yRotation, 0f);
+
+        pitchNet.Value = xRotation;
     }
 
-    void VisibilityHandler()
+    private void ApplyRemotePitch()
     {
-        if (isVisible)
-        {
-            meshRenderer.enabled = true;
-            lineRender.enabled = true;
-            GetComponent<PlayerHUD>()._fToggleInvisibilityUI(true);
-        }
-        else
+        if (cameraComponent == null) return;
+
+        if (!IsOwner)
+            cameraComponent.transform.localRotation = Quaternion.Euler(pitchNet.Value, 0f, 0f);
+    }
+
+    private void ApplyVisibility()
+    {
+        if (meshRenderer == null) return;
+
+        if (health != null && health.IsRespawning)
         {
             meshRenderer.enabled = false;
-            lineRender.enabled = false;
-            GetComponent<PlayerHUD>()._fToggleInvisibilityUI(false);
+            if (hud != null) hud._fToggleInvisibilityUI(false);
+            return;
         }
-        isVisible = timeToInvisible > 0.0f;
-        if (timeToInvisible > 0.0f) timeToInvisible -= Time.deltaTime; 
-    }
-    
-    void ShootCooldown()
-    {
-        timeCooldown -= Time.deltaTime;
+
+        if (blinkActive) return;
+
+        bool revealed = false;
+        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+            revealed = NetworkManager.Singleton.ServerTime.Time < revealUntil.Value;
+
+        meshRenderer.enabled = revealed;
+
+        if (hud != null)
+            hud._fToggleInvisibilityUI(revealed);
     }
 
-    void OnDrawGizmosSelected()
+    void ShootCooldown()
     {
-        if (groundCheck != null)
-        {
-            Gizmos.color = isGrounded ? Color.green : Color.red;
-            Gizmos.DrawWireSphere(groundCheck.position, groundCheckDistance);
-        }
+        if (timeCooldown > 0f)
+            timeCooldown -= Time.deltaTime;
+    }
+
+    // Llamado por PlayerHealthOnline (server) para otorgar kills
+    public void AddScoreServer(int amount)
+    {
+        if (!IsServer) return;
+        scoreNet.Value += Mathf.Max(0, amount);
+    }
+
+    // Llamado por PlayerHealthOnline (ClientRpc) para blink
+    public void StartDamageBlink()
+    {
+        if (blinkRoutine != null)
+            StopCoroutine(blinkRoutine);
+
+        blinkRoutine = StartCoroutine(DamageBlinkRoutine());
+    }
+
+    private IEnumerator DamageBlinkRoutine()
+    {
+        if (meshRenderer == null) yield break;
+
+        blinkActive = true;
+
+        meshRenderer.enabled = true;
+        yield return new WaitForSeconds(0.1f);
+        meshRenderer.enabled = false;
+        yield return new WaitForSeconds(0.1f);
+        meshRenderer.enabled = true;
+        yield return new WaitForSeconds(0.1f);
+        meshRenderer.enabled = false;
+        yield return new WaitForSeconds(0.1f);
+
+        blinkActive = false;
+        ApplyVisibility();
     }
 }

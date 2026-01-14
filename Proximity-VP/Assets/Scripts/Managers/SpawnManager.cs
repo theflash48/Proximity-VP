@@ -1,5 +1,7 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Netcode;
 using UnityEngine;
 
 public class SpawnManager : MonoBehaviour
@@ -10,90 +12,125 @@ public class SpawnManager : MonoBehaviour
     public GameObject blackCamera;
 
     [Header("Spawn Settings")]
-    public Transform[] spawnPoints; // Array con los 6 spawn points
-    
-    public List<GameObject> activePlayers = new List<GameObject>();
+    public Transform[] spawnPoints;
 
+    public List<GameObject> activePlayers = new List<GameObject>();
     public int ActivePlayersCount => activePlayers.Count;
+
+    [Header("Online Auto Discover")]
+    [SerializeField] private bool autoDiscoverOnlinePlayers = true;
+    [SerializeField] private float discoverInterval = 0.5f;
+
+    private Coroutine discoverRoutine;
 
     void Awake()
     {
-        if (Instance == null)
+        if (Instance == null) Instance = this;
+        else Destroy(gameObject);
+    }
+
+    void OnEnable()
+    {
+        if (autoDiscoverOnlinePlayers && discoverRoutine == null)
+            discoverRoutine = StartCoroutine(DiscoverLoop());
+    }
+
+    void OnDisable()
+    {
+        if (discoverRoutine != null)
         {
-            Instance = this;
-        }
-        else
-        {
-            Destroy(gameObject);
+            StopCoroutine(discoverRoutine);
+            discoverRoutine = null;
         }
     }
 
-    // Registrar jugadores activos
-    public void RegisterPlayer(GameObject player)
+    private IEnumerator DiscoverLoop()
     {
-        if (!activePlayers.Contains(player))
+        while (true)
         {
-            activePlayers.Add(player);
+            if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+                RefreshActivePlayersFromScene();
+
+            yield return new WaitForSeconds(discoverInterval);
+        }
+    }
+
+    private void RefreshActivePlayersFromScene()
+    {
+        var found = GameObject.FindGameObjectsWithTag("Player");
+        var set = new HashSet<GameObject>();
+
+        for (int i = 0; i < found.Length; i++)
+        {
+            var go = found[i];
+            if (!go) continue;
+
+            var netObj = go.GetComponent<NetworkObject>();
+            if (!netObj || !netObj.IsSpawned) continue;
+
+            set.Add(go);
         }
 
-        if (activePlayers.Count >= 1)
+        activePlayers.RemoveAll(p => p == null || !set.Contains(p));
+        foreach (var go in set)
         {
-            blackScreen.SetActive(false);
-            blackCamera.SetActive(false);
+            if (!activePlayers.Contains(go))
+                activePlayers.Add(go);
         }
+
+        ApplyBlackState();
+    }
+
+    private void ApplyBlackState()
+    {
+        bool hasPlayers = activePlayers.Count > 0;
+        if (blackScreen != null) blackScreen.SetActive(!hasPlayers);
+        if (blackCamera != null) blackCamera.SetActive(!hasPlayers);
+    }
+
+    public void RegisterPlayer(GameObject player)
+    {
+        if (!player) return;
+        if (!activePlayers.Contains(player))
+            activePlayers.Add(player);
+        ApplyBlackState();
     }
 
     public void UnregisterPlayer(GameObject player)
     {
+        if (!player) return;
         if (activePlayers.Contains(player))
-        {
             activePlayers.Remove(player);
-        }
-
-        if (activePlayers.Count <= 0)
-        {
-            blackScreen.SetActive(true);
-            blackCamera.SetActive(true);
-        }
+        ApplyBlackState();
     }
 
-    // Obtener el spawn point mas lejano de todos los jugadores activos
     public Transform GetFarthestSpawnPoint(GameObject playerToSpawn)
     {
         if (spawnPoints == null || spawnPoints.Length == 0)
         {
-            Debug.LogError("No hay spawn points bruh");
+            Debug.LogError("No hay spawn points.");
             return null;
         }
 
         List<GameObject> otherPlayers = activePlayers.Where(p => p != playerToSpawn && p != null).ToList();
-        
+
         if (otherPlayers.Count == 0)
-        {
             return spawnPoints[Random.Range(0, spawnPoints.Length)];
-        }
 
         Transform bestSpawn = spawnPoints[0];
         float maxMinDistance = 0f;
 
         foreach (Transform spawn in spawnPoints)
         {
-            // Calcular la distancia de este spawn a cualquier jugador
             float minDistanceToPlayers = float.MaxValue;
 
             foreach (GameObject player in otherPlayers)
             {
-                if (player != null)
-                {
-                    float distance = Vector3.Distance(spawn.position, player.transform.position);
-                    if (distance < minDistanceToPlayers)
-                    {
-                        minDistanceToPlayers = distance;
-                    }
-                }
+                float distance = Vector3.Distance(spawn.position, player.transform.position);
+                if (distance < minDistanceToPlayers)
+                    minDistanceToPlayers = distance;
             }
 
-            // Si este spawn tiene la mayor distancia mnima, es el mejor
             if (minDistanceToPlayers > maxMinDistance)
             {
                 maxMinDistance = minDistanceToPlayers;
@@ -106,17 +143,14 @@ public class SpawnManager : MonoBehaviour
 
     void OnDrawGizmos()
     {
-        if (spawnPoints != null)
+        if (spawnPoints == null) return;
+
+        Gizmos.color = Color.cyan;
+        foreach (Transform spawn in spawnPoints)
         {
-            Gizmos.color = Color.cyan;
-            foreach (Transform spawn in spawnPoints)
-            {
-                if (spawn != null)
-                {
-                    Gizmos.DrawWireSphere(spawn.position, 0.5f);
-                    Gizmos.DrawLine(spawn.position, spawn.position + Vector3.up * 2f);
-                }
-            }
+            if (spawn == null) continue;
+            Gizmos.DrawWireSphere(spawn.position, 0.5f);
+            Gizmos.DrawLine(spawn.position, spawn.position + Vector3.up * 2f);
         }
     }
 }

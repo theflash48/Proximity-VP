@@ -1,68 +1,69 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
+using Unity.Netcode;
 
 public class Shoot : MonoBehaviour
 {
     public GameObject firingPoint;
-    
+
     public AudioSource audioSource;
     public AudioClip shootSound;
 
-    // true si este objeto es un Player online
-    private bool isOnline;
+    private PlayerControllerOnline pcOnline;
 
-    void Start()
+    void Awake()
     {
-        isOnline = GetComponent<PlayerControllerOnline>() != null;
+        pcOnline = GetComponent<PlayerControllerOnline>();
     }
 
-    /// <summary>
-    /// Devuelve true si ha golpeado a un jugador (para sumar kill).
-    /// </summary>
+    private bool IsOnlineMode()
+    {
+        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+            return true;
+
+        if (pcOnline != null && pcOnline.enabled)
+            return true;
+
+        return false;
+    }
+
     public bool ShootBullet(GameObject playerCamera)
     {
         if (audioSource != null && shootSound != null)
             audioSource.PlayOneShot(shootSound);
-        
+
         if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
             return false;
 
-        if (firingPoint == null)
-        {
-            Debug.LogWarning("Shoot: firingPoint no asignado.");
+        if (firingPoint == null || playerCamera == null)
             return false;
-        }
 
-        RaycastHit hit;
-        if (Physics.Raycast(firingPoint.transform.position,
-                            playerCamera.transform.forward,
-                            out hit, 100f))
+        Vector3 origin = firingPoint.transform.position;
+        Vector3 dir = playerCamera.transform.forward;
+
+        if (!Physics.Raycast(origin, dir, out RaycastHit hit, 100f, ~0, QueryTriggerInteraction.Ignore))
+            return false;
+
+        if (hit.transform != null && hit.transform.root == transform.root)
+            return false;
+
+        if (IsOnlineMode())
         {
-            Debug.Log("Objeto golpeado: " + hit.transform.name + " en posición: " + hit.point);
-
-            if (!hit.transform.CompareTag("Player"))
-                return false;
-
-            if (!isOnline)
+            var phOnline = hit.collider.GetComponentInParent<PlayerHealthOnline>();
+            if (phOnline != null)
             {
-                // COUCH PARTY
-                var phLocal = hit.transform.GetComponent<PlayerHealthLocal>();
-                if (phLocal != null)
-                {
-                    phLocal.TakeDamage();
-                    if (phLocal.currentLives <= 0)
-                        return true; // kill
-                }
+                ulong shooterId = (NetworkManager.Singleton != null) ? NetworkManager.Singleton.LocalClientId : 0;
+                phOnline.TakeDamageServerRpc(shooterId);
+                return true;
             }
-            else
+        }
+        else
+        {
+            var phLocal = hit.collider.GetComponentInParent<PlayerHealthLocal>();
+            if (phLocal != null)
             {
-                // ONLINE
-                var phOnline = hit.transform.GetComponent<PlayerHealthOnline>();
-                if (phOnline != null)
-                {
-                    phOnline.TakeDamageServerRpc(); // el servidor aplica el daño
-                    return true;                    // contamos hit para el score
-                }
+                phLocal.TakeDamage();
+                return phLocal.currentLives <= 0;
             }
         }
 

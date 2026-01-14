@@ -1,80 +1,87 @@
-using System.Collections;
 using UnityEngine;
-using System.Collections.Generic;
 using UnityEngine.UI;
-using UnityEngine.SceneManagement;
 
 public class TimerLocal : MonoBehaviour
 {
     [SerializeField] Text timerText;
-    [SerializeField] public float remainingTime;
+    [SerializeField] public float remainingTime = 60f;
     [SerializeField] GameObject uiCanvas;
     ButtonsController btnControllers;
 
     bool counting = false;
     public bool gameStarted = false;
 
-    private void Awake()
-    {
-        btnControllers = GetComponent<ButtonsController>();
+    public delegate void OnTryStartGame();
+    public static OnTryStartGame onTryStartGame;
 
-        uiCanvas.SetActive(false);
+    public delegate void OnEndGame();
+    public static OnEndGame onEndGame;
+
+    void Start()
+    {
+        btnControllers = FindFirstObjectByType<ButtonsController>();
+
+        if (uiCanvas != null)
+            uiCanvas.SetActive(false);
+
+        UpdateTimerUI(remainingTime);
     }
 
     void Update()
     {
-        //Iniciar Juego
         if (Input.GetKeyDown(KeyCode.Space) && !gameStarted)
-        {
             TryStartGame();
-        }
 
-        //Actualizar temporizador si est en marcha
         if (counting)
         {
-            remainingTime -=Time.deltaTime;
-            
-            int minutes = Mathf.FloorToInt(remainingTime / 60);
-            int seconds = Mathf.FloorToInt(remainingTime % 60);
-            timerText.text = string.Format("{0:00}:{1:00}", minutes, seconds);
-
-            if (remainingTime <= 0)
+            remainingTime -= Time.deltaTime;
+            if (remainingTime <= 0f)
             {
+                remainingTime = 0f;
                 EndGame();
             }
-        }
-        
-        
 
-        if (Input.GetKeyDown(KeyCode.V))
-        {
-            btnControllers.Restart();
+            UpdateTimerUI(remainingTime);
         }
-        
+
+        if (Input.GetKeyDown(KeyCode.V) && btnControllers != null)
+            btnControllers.Restart();
     }
 
-    public delegate void OnTryStartGame();
-    public static OnTryStartGame onTryStartGame;
-    void TryStartGame()
+    private void TryStartGame()
     {
-        if (SpawnManager.Instance.ActivePlayersCount >= 2 && !gameStarted)
+        if (SpawnManager.Instance != null && SpawnManager.Instance.ActivePlayersCount >= 2 && !gameStarted)
         {
             gameStarted = true;
             counting = true;
+
+            if (uiCanvas != null)
+                uiCanvas.SetActive(false);
+
             onTryStartGame?.Invoke();
         }
     }
-    
-    public delegate void OnEndGame();
-    public static OnEndGame onEndGame;
-    void EndGame()
+
+    private void EndGame()
     {
         counting = false;
-        remainingTime = 0;
-        Debug.Log("Tiempo Acabado");
-        //Time.timeScale = 0;
-        uiCanvas.SetActive(true);
+
+        if (uiCanvas != null)
+            uiCanvas.SetActive(true);
+
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+
         onEndGame?.Invoke();
     }
-    
+
+    private void UpdateTimerUI(float t)
+    {
+        if (timerText == null) return;
+
+        if (t < 0f) t = 0f;
+        int minutes = Mathf.FloorToInt(t / 60f);
+        int seconds = Mathf.FloorToInt(t % 60f);
+        timerText.text = string.Format("{0:00}:{1:00}", minutes, seconds);
+    }
 }

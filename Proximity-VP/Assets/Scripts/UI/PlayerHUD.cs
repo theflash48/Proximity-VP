@@ -4,54 +4,91 @@ using System.Collections;
 
 public class PlayerHUD : MonoBehaviour
 {
+    [Header("HUD Images")]
     [SerializeField] private Image _cHUD;
     [SerializeField] private Image _cReloadBar;
     [SerializeField] private Image _cInvisibility;
+
+    [Header("HUD Texts")]
+    [SerializeField] private Text _cName;   // NUEVO: username
     public Text _cPlace;
     public Text _cScore;
 
-    private Camera cam;
+    private Coroutine reloadRoutine;
 
     void Start()
     {
-        _cReloadBar.fillAmount = 0;
+        if (_cReloadBar != null)
+            _cReloadBar.fillAmount = 0;
+
+        if (_cInvisibility != null)
+            _cInvisibility.enabled = false;
     }
 
+    // NUEVO: nombre del jugador (username)
+    public void _fUpdateName(string username)
+    {
+        if (_cName == null) return;
+        _cName.text = string.IsNullOrWhiteSpace(username) ? "" : username;
+    }
+
+    // Ya lo llamáis desde controllers
     public void _fUpdateScore(int score)
     {
+        if (_cScore == null) return;
         _cScore.text = score.ToString();
     }
 
-    public void _fHealthUI(int cur, int max)
+    // Vidas (si tu HUD no usa fillAmount, no pasa nada)
+    public void _fHealthUI(int currentLives, int maxLives)
     {
-        if (cur <= max / 2)
-            _cHUD.color = new Color32(255, 0, 0, 255);
-        else
-            _cHUD.color = new Color32(255, 255, 255, 255);
+        if (_cHUD == null) return;
+        if (maxLives <= 0) return;
+
+        float pct = Mathf.Clamp01((float)currentLives / maxLives);
+
+        // Si tu imagen no es Filled, Unity lo ignorará y no rompe nada
+        _cHUD.fillAmount = pct;
     }
 
-    public void _fToggleInvisibilityUI(bool isVisible)
+    // Indicador de visibilidad (no el renderer real)
+    public void _fToggleInvisibilityUI(bool revealed)
     {
-        if (isVisible)
-            _cInvisibility.enabled = false;
-        else
-            _cInvisibility.enabled = true;
+        if (_cInvisibility == null) return;
+        _cInvisibility.enabled = revealed;
     }
 
+    // Barra de recarga
     public void _fReloadUI(float loadDelay)
     {
-        Debug.Log("HUD delay: " + loadDelay);
-        StartCoroutine(_fReloadBar(loadDelay));
+        if (_cReloadBar == null) return;
+
+        if (reloadRoutine != null)
+            StopCoroutine(reloadRoutine);
+
+        reloadRoutine = StartCoroutine(_fReloadBar(loadDelay));
     }
 
     private IEnumerator _fReloadBar(float reDelay)
     {
-        _cReloadBar.fillAmount = 1;
-        for (float i = 0; i < reDelay; i += 0.02f)
+        if (_cReloadBar == null) yield break;
+
+        if (reDelay <= 0f)
         {
-            _cReloadBar.fillAmount -= 0.02f / reDelay;
-            yield return new WaitForSeconds(0.02f);
+            _cReloadBar.fillAmount = 0f;
+            yield break;
         }
-        _cReloadBar.fillAmount = 0;
+
+        _cReloadBar.fillAmount = 1f;
+
+        float t = 0f;
+        while (t < reDelay)
+        {
+            t += Time.deltaTime;
+            _cReloadBar.fillAmount = Mathf.Lerp(1f, 0f, t / reDelay);
+            yield return null;
+        }
+
+        _cReloadBar.fillAmount = 0f;
     }
 }

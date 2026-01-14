@@ -6,40 +6,87 @@ public class PlayerHealthOnline : NetworkBehaviour
 {
     [Header("Health Settings")]
     public int maxLives = 2;
-    public NetworkVariable<int> currentLives = new NetworkVariable<int>();
+
+    public NetworkVariable<int> currentLives = new NetworkVariable<int>(
+        0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
     [Header("Respawn Settings")]
     public float respawnDelay = 3f;
 
     public TimerLocal timer;
 
-    private Renderer meshRenderer;
+    private NetworkVariable<bool> isRespawning = new NetworkVariable<bool>(
+        false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
+    public bool IsRespawning => isRespawning.Value;
+
     private Collider col;
+    private Rigidbody rb;
+    private PlayerHUD hud;
+    private PlayerControllerOnline controller;
 
     void Awake()
     {
-        meshRenderer = GetComponent<Renderer>();
         col = GetComponent<Collider>();
+        rb = GetComponent<Rigidbody>();
+        hud = GetComponent<PlayerHUD>();
+        controller = GetComponent<PlayerControllerOnline>();
     }
 
     public override void OnNetworkSpawn()
     {
+        if (timer == null)
+            timer = Object.FindAnyObjectByType<TimerLocal>();
+
         if (IsServer)
         {
             currentLives.Value = maxLives;
+            isRespawning.Value = false;
+        }
+
+        currentLives.OnValueChanged += OnLivesChanged;
+        isRespawning.OnValueChanged += OnRespawnChanged;
+
+        OnLivesChanged(0, currentLives.Value);
+        OnRespawnChanged(false, isRespawning.Value);
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        currentLives.OnValueChanged -= OnLivesChanged;
+        isRespawning.OnValueChanged -= OnRespawnChanged;
+    }
+
+    private void OnLivesChanged(int previous, int current)
+    {
+        if (hud != null)
+            hud._fHealthUI(current, maxLives);
+    }
+
+    private void OnRespawnChanged(bool previous, bool current)
+    {
+        if (col != null)
+            col.enabled = !current;
+
+        if (current && rb != null)
+        {
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
         }
     }
 
+    // Compatibilidad: si algún sitio aún llama a TakeDamageServerRpc
     [ServerRpc(RequireOwnership = false)]
-    public void TakeDamageServerRpc()
+    public void TakeDamageServerRpc(ulong shooterClientId)
     {
-        TakeDamage();
+        ApplyDamageFromServer(shooterClientId);
     }
 
-    // Solo la lógica del servidor
-    private void TakeDamage()
+    // Llamado desde el server (por el raycast validado del shooter)
+    public void ApplyDamageFromServer(ulong shooterClientId)
     {
         if (!IsServer) return;
+        if (isRespawning.Value) return;
 
         if (timer != null)
         {
@@ -48,88 +95,74 @@ public class PlayerHealthOnline : NetworkBehaviour
         }
 
         currentLives.Value--;
-        GetComponent<PlayerHUD>()._fHealthUI(currentLives.Value, maxLives);
-        Debug.Log(gameObject.name + " vidas restantes (online): " + currentLives.Value);
+
+        DamageBlinkClientRpc();
 
         if (currentLives.Value <= 0)
         {
-            Die();
+            AwardKillServer(shooterClientId);
+            StartCoroutine(RespawnCoroutineServer());
         }
-        else
+    }
+
+    private void AwardKillServer(ulong shooterClientId)
+    {
+        if (!IsServer) return;
+        if (NetworkManager.Singleton == null) return;
+
+        if (NetworkManager.Singleton.ConnectedClients.TryGetValue(shooterClientId, out var shooterClient) &&
+            shooterClient.PlayerObject != null)
         {
-            StartCoroutine(RespawnCoroutine());
+            var shooterController = shooterClient.PlayerObject.GetComponent<PlayerControllerOnline>();
+            if (shooterController != null)
+                shooterController.AddScoreServer(1);
         }
     }
 
-    [ServerRpc(RequireOwnership = false)]
-    public void ResetLivesServerRpc()
+    private IEnumerator RespawnCoroutineServer()
     {
-        currentLives.Value = maxLives;
-    }
-
-    private void Die()
-    {
-        // aquí podrías hacer animación, etc.
-        StartCoroutine(RespawnCoroutine(true));
-    }
-
-    private IEnumerator RespawnCoroutine(bool resetLives = false)
-    {
-        // Desactivar colisión y “render”
-        col.enabled = false;
-        meshRenderer.enabled = false;
+        isRespawning.Value = true;
 
         yield return new WaitForSeconds(respawnDelay);
 
-        // Recolocar en un spawn
         Transform spawn = SpawnManager.Instance != null
             ? SpawnManager.Instance.GetFarthestSpawnPoint(gameObject)
             : null;
 
-        if (spawn != null)
+        Vector3 pos = spawn != null ? spawn.position : transform.position;
+        Quaternion rot = spawn != null ? spawn.rotation : transform.rotation;
+
+        var targetOwnerOnly = new ClientRpcParams
         {
-            transform.position = spawn.position;
-            transform.rotation = spawn.rotation;
-        }
+            Send = new ClientRpcSendParams { TargetClientIds = new[] { OwnerClientId } }
+        };
 
-        if (resetLives)
-        {
-            currentLives.Value = maxLives;
-            GetComponent<PlayerHUD>()._fHealthUI(currentLives.Value, maxLives);
-        }
+        TeleportOwnerClientRpc(pos, rot, targetOwnerOnly);
 
-        // Reactivar
-        col.enabled = true;
-        meshRenderer.enabled = true;
+        currentLives.Value = maxLives;
+        isRespawning.Value = false;
 
-        // Parpadeo de invulnerabilidad (en clientes) 
-        BlinkClientRpc();
+        DamageBlinkClientRpc();
     }
 
     [ClientRpc]
-    void BlinkClientRpc()
+    private void TeleportOwnerClientRpc(Vector3 pos, Quaternion rot, ClientRpcParams clientRpcParams = default)
     {
-        StartCoroutine(BlinkCoroutine());
+        if (!IsOwner) return;
+
+        transform.SetPositionAndRotation(pos, rot);
+
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+        }
     }
 
-    IEnumerator BlinkCoroutine()
+    [ClientRpc]
+    private void DamageBlinkClientRpc()
     {
-        if (meshRenderer == null) yield break;
-
-        for (int i = 0; i < 10; i++)
-        {
-            meshRenderer.enabled = !meshRenderer.enabled;
-            yield return new WaitForSeconds(0.1f);
-        }
-
-        meshRenderer.enabled = true;
-    }
-
-    void OnDestroy()
-    {
-        if (SpawnManager.Instance != null)
-        {
-            SpawnManager.Instance.UnregisterPlayer(gameObject);
-        }
+        if (controller != null)
+            controller.StartDamageBlink();
     }
 }

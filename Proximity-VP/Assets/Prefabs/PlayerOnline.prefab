@@ -578,7 +578,7 @@ AudioListener:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8076518745375911800}
-  m_Enabled: 1
+  m_Enabled: 0
 --- !u!114 &7656111870541295461
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1016,6 +1016,9 @@ MonoBehaviour:
   groundLayer:
     serializedVersion: 2
     m_Bits: 1
+  timeVisible: 5
+  timeCooldownMax: 0.5
+  timeCooldown: 0
   score: 0
   playerCamera: {fileID: 6877589753762229}
   cameraComponent: {fileID: 0}
@@ -1025,9 +1028,6 @@ MonoBehaviour:
   lineRender: {fileID: 0}
   moveInput: {x: 0, y: 0}
   lookInput: {x: 0, y: 0}
-  isVisible: 0
-  timeVisible: 5
-  timeToInvisible: 0
 --- !u!114 &2219747137910009655
 MonoBehaviour:
   m_ObjectHideFlags: 0
