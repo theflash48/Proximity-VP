@@ -1578,6 +1578,10 @@ MonoBehaviour:
   _cHUD: {fileID: 420722015428507709}
   _cReloadBar: {fileID: 5615655285069701156}
   _cInvisibility: {fileID: 1183035673349082438}
+  _hudNormalColor: {r: 1, g: 1, b: 1, a: 1}
+  _hudDamagedColor: {r: 1, g: 0, b: 0, a: 1}
+  _cDeathScreen: {fileID: 5614289231409078874}
+  _cName: {fileID: 0}
   _cPlace: {fileID: 3562915477688677305}
   _cScore: {fileID: 8556673330956922803}
 --- !u!114 &646033740549643927

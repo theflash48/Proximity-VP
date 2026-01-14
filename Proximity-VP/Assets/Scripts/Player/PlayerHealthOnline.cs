@@ -13,7 +13,7 @@ public class PlayerHealthOnline : NetworkBehaviour
     [Header("Respawn Settings")]
     public float respawnDelay = 3f;
 
-    public TimerLocal timer;
+    public TimerOnline timer; // ✅ online usa TimerOnline
 
     private NetworkVariable<bool> isRespawning = new NetworkVariable<bool>(
         false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
@@ -36,7 +36,7 @@ public class PlayerHealthOnline : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         if (timer == null)
-            timer = Object.FindAnyObjectByType<TimerLocal>();
+            timer = Object.FindAnyObjectByType<TimerOnline>();
 
         if (IsServer)
         {
@@ -46,6 +46,13 @@ public class PlayerHealthOnline : NetworkBehaviour
 
         currentLives.OnValueChanged += OnLivesChanged;
         isRespawning.OnValueChanged += OnRespawnChanged;
+
+        // ✅ Spawn: blanco + DeathScreen off
+        if (hud != null)
+        {
+            hud._fSetHudDamageState(false);
+            hud._fToggleDeathScreen(false);
+        }
 
         OnLivesChanged(0, currentLives.Value);
         OnRespawnChanged(false, isRespawning.Value);
@@ -57,10 +64,29 @@ public class PlayerHealthOnline : NetworkBehaviour
         isRespawning.OnValueChanged -= OnRespawnChanged;
     }
 
+    private bool IsMatchRunning()
+    {
+        // Si no encontramos timer por cualquier motivo, no bloqueamos feedback visual
+        if (timer == null) return true;
+        return timer.gameStarted && timer.remainingTime > 0f;
+    }
+
     private void OnLivesChanged(int previous, int current)
     {
         if (hud != null)
+        {
             hud._fHealthUI(current, maxLives);
+
+            // ✅ Solo “en marcha” (tiempo bajando). Si no, blanco.
+            if (!IsMatchRunning())
+            {
+                hud._fSetHudDamageState(false);
+            }
+            else
+            {
+                hud._fSetHudDamageState(current < maxLives);
+            }
+        }
     }
 
     private void OnRespawnChanged(bool previous, bool current)
@@ -73,16 +99,18 @@ public class PlayerHealthOnline : NetworkBehaviour
             rb.linearVelocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
         }
+
+        // ✅ DeathScreen ON mientras respawneas (muerto), OFF al volver
+        if (hud != null)
+            hud._fToggleDeathScreen(current);
     }
 
-    // Compatibilidad: si algún sitio aún llama a TakeDamageServerRpc
     [ServerRpc(RequireOwnership = false)]
     public void TakeDamageServerRpc(ulong shooterClientId)
     {
         ApplyDamageFromServer(shooterClientId);
     }
 
-    // Llamado desde el server (por el raycast validado del shooter)
     public void ApplyDamageFromServer(ulong shooterClientId)
     {
         if (!IsServer) return;
@@ -90,7 +118,7 @@ public class PlayerHealthOnline : NetworkBehaviour
 
         if (timer != null)
         {
-            if (!timer.gameStarted || timer.remainingTime <= 0)
+            if (!timer.gameStarted || timer.remainingTime <= 0f)
                 return;
         }
 

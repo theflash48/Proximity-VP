@@ -43,22 +43,18 @@ public class PlayerControllerLocal : MonoBehaviour
     private bool blinkActive = false;
     private Coroutine blinkRoutine;
 
+    private bool allowCursorLock = true; // se apaga al finalizar la partida
+
     void OnEnable()
     {
-        TimerLocal.onTryStartGame += ToggleControls;
-        TimerLocal.onEndGame += ToggleControls;
+        TimerLocal.onTryStartGame += OnGameStart;
+        TimerLocal.onEndGame += OnGameEnd;
     }
 
     void OnDisable()
     {
-        TimerLocal.onTryStartGame -= ToggleControls;
-        TimerLocal.onEndGame -= ToggleControls;
-    }
-
-    void ToggleControls()
-    {
-        Cursor.lockState = CursorLockMode.None;
-        Cursor.visible = true;
+        TimerLocal.onTryStartGame -= OnGameStart;
+        TimerLocal.onEndGame -= OnGameEnd;
     }
 
     void Awake()
@@ -71,8 +67,8 @@ public class PlayerControllerLocal : MonoBehaviour
 
         playerInput = GetComponent<PlayerInput>();
 
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+        allowCursorLock = true;
+        ApplyCursorControl(true);
 
         if (shootScript == null)
             shootScript = GetComponent<Shoot>();
@@ -86,6 +82,45 @@ public class PlayerControllerLocal : MonoBehaviour
             lineRender.useWorldSpace = true;
             lineRender.positionCount = 2;
         }
+    }
+
+    void OnApplicationFocus(bool hasFocus)
+    {
+        if (!hasFocus)
+        {
+            ApplyCursorControl(false); // visible
+            return;
+        }
+
+        ApplyCursorControl(allowCursorLock); // si seguimos controlando, oculto
+    }
+
+    void OnApplicationPause(bool pause)
+    {
+        if (pause)
+            ApplyCursorControl(false);
+        else
+            OnApplicationFocus(Application.isFocused);
+    }
+
+    private void OnGameStart()
+    {
+        allowCursorLock = true;
+        ApplyCursorControl(true);
+    }
+
+    private void OnGameEnd()
+    {
+        allowCursorLock = false;
+        ApplyCursorControl(false);
+    }
+
+    private void ApplyCursorControl(bool controlling)
+    {
+        if (!Application.isFocused) controlling = false;
+
+        Cursor.lockState = controlling ? CursorLockMode.Locked : CursorLockMode.None;
+        Cursor.visible = !controlling;
     }
 
     public void OnMove(InputValue value)
@@ -207,7 +242,7 @@ public class PlayerControllerLocal : MonoBehaviour
         if (lineRender != null) lineRender.enabled = shouldBeVisible;
 
         var hud = GetComponent<PlayerHUD>();
-        if (hud != null) hud._fToggleInvisibilityUI(shouldBeVisible);
+        if (hud != null) hud._fToggleInvisibilityUI(shouldBeVisible); // ✅ PlayerHUD lo invierte internamente
 
         isVisible = shouldBeVisible;
         if (timeToInvisible > 0f) timeToInvisible -= Time.deltaTime;

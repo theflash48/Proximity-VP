@@ -18,7 +18,7 @@ public class PlayerHealthLocal : MonoBehaviour
     private Rigidbody rb;
     private Collider playerCollider;
 
-    [Header("Death Screen")]
+    [Header("Death Screen (Fade)")]
     public Image fadeImage;
     public float fadeDuration = 1f;
 
@@ -47,6 +47,15 @@ public class PlayerHealthLocal : MonoBehaviour
             fadeImage.gameObject.SetActive(false);
         }
 
+        // ✅ Spawn: HUD blanco + DeathScreen off
+        var hud = GetComponent<PlayerHUD>();
+        if (hud != null)
+        {
+            hud._fHealthUI(currentLives, maxLives);
+            hud._fSetHudDamageState(false);
+            hud._fToggleDeathScreen(false);
+        }
+
         if (SpawnManager.Instance != null)
             SpawnManager.Instance.RegisterPlayer(gameObject);
     }
@@ -58,8 +67,16 @@ public class PlayerHealthLocal : MonoBehaviour
         if (isDead) return;
 
         currentLives--;
+
         var hud = GetComponent<PlayerHUD>();
-        if (hud != null) hud._fHealthUI(currentLives, maxLives);
+        if (hud != null)
+        {
+            hud._fHealthUI(currentLives, maxLives);
+
+            // ✅ Primer impacto: rojo (y se queda rojo)
+            if (currentLives < maxLives)
+                hud._fSetHudDamageState(true);
+        }
 
         if (currentLives <= 0)
         {
@@ -75,6 +92,11 @@ public class PlayerHealthLocal : MonoBehaviour
     void Die()
     {
         isDead = true;
+
+        // ✅ Se mantiene rojo, y activamos DeathScreen
+        var hud = GetComponent<PlayerHUD>();
+        if (hud != null)
+            hud._fToggleDeathScreen(true);
 
         if (deathEffect != null)
             Instantiate(deathEffect, transform.position, Quaternion.identity);
@@ -145,7 +167,14 @@ public class PlayerHealthLocal : MonoBehaviour
         currentLives = maxLives;
 
         var hud = GetComponent<PlayerHUD>();
-        if (hud != null) hud._fHealthUI(currentLives, maxLives);
+        if (hud != null)
+        {
+            hud._fHealthUI(currentLives, maxLives);
+
+            // ✅ Respawn: vuelve a blanco
+            hud._fSetHudDamageState(false);
+            hud._fToggleDeathScreen(false);
+        }
 
         isDead = false;
 

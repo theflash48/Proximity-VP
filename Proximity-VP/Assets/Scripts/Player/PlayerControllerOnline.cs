@@ -52,6 +52,8 @@ public class PlayerControllerOnline : NetworkBehaviour
     private bool blinkActive;
     private Coroutine blinkRoutine;
 
+    private bool allowCursorLock = true;
+
     private NetworkVariable<int> scoreNet = new NetworkVariable<int>(
         0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
@@ -60,6 +62,18 @@ public class PlayerControllerOnline : NetworkBehaviour
 
     private NetworkVariable<double> revealUntil = new NetworkVariable<double>(
         0d, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
+    void OnEnable()
+    {
+        TimerOnline.onTryStartGame += OnGameStart;
+        TimerOnline.onEndGame += OnGameEnd;
+    }
+
+    void OnDisable()
+    {
+        TimerOnline.onTryStartGame -= OnGameStart;
+        TimerOnline.onEndGame -= OnGameEnd;
+    }
 
     void Awake()
     {
@@ -111,13 +125,17 @@ public class PlayerControllerOnline : NetworkBehaviour
 
         if (IsOwner)
         {
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
+            allowCursorLock = true;
+            ApplyCursorControl(true);
         }
 
         score = scoreNet.Value;
         if (hud != null)
             hud._fUpdateScore(score);
+
+        // asegurar DeathScreen OFF al entrar
+        if (hud != null)
+            hud._fToggleDeathScreen(false);
 
         scoreNet.OnValueChanged += OnScoreChanged;
     }
@@ -125,6 +143,54 @@ public class PlayerControllerOnline : NetworkBehaviour
     public override void OnNetworkDespawn()
     {
         scoreNet.OnValueChanged -= OnScoreChanged;
+
+        if (IsOwner)
+            ApplyCursorControl(false);
+    }
+
+    void OnApplicationFocus(bool hasFocus)
+    {
+        if (!IsOwner) return;
+
+        if (!hasFocus)
+        {
+            ApplyCursorControl(false);
+            return;
+        }
+
+        ApplyCursorControl(allowCursorLock);
+    }
+
+    void OnApplicationPause(bool pause)
+    {
+        if (!IsOwner) return;
+
+        if (pause)
+            ApplyCursorControl(false);
+        else
+            OnApplicationFocus(Application.isFocused);
+    }
+
+    private void OnGameStart()
+    {
+        if (!IsOwner) return;
+        allowCursorLock = true;
+        ApplyCursorControl(true);
+    }
+
+    private void OnGameEnd()
+    {
+        if (!IsOwner) return;
+        allowCursorLock = false;
+        ApplyCursorControl(false);
+    }
+
+    private void ApplyCursorControl(bool controlling)
+    {
+        if (!Application.isFocused) controlling = false;
+
+        Cursor.lockState = controlling ? CursorLockMode.Locked : CursorLockMode.None;
+        Cursor.visible = !controlling;
     }
 
     private void OnScoreChanged(int previous, int current)
@@ -159,7 +225,6 @@ public class PlayerControllerOnline : NetworkBehaviour
 
         if (playerCamera == null) return;
 
-        // Sonido/feedback local (sin daño online desde aquí)
         if (shootScript != null)
             shootScript.ShootBullet(playerCamera);
 
@@ -178,7 +243,6 @@ public class PlayerControllerOnline : NetworkBehaviour
     {
         if (NetworkManager.Singleton == null) return;
 
-        // Reveal del shooter (este mismo player)
         double now = NetworkManager.Singleton.ServerTime.Time;
         revealUntil.Value = now + Mathf.Max(0f, visibleDuration);
 
@@ -292,7 +356,7 @@ public class PlayerControllerOnline : NetworkBehaviour
         if (health != null && health.IsRespawning)
         {
             meshRenderer.enabled = false;
-            if (hud != null) hud._fToggleInvisibilityUI(false);
+            if (hud != null) hud._fToggleInvisibilityUI(false); // ✅ PlayerHUD lo invierte internamente
             return;
         }
 
@@ -305,7 +369,7 @@ public class PlayerControllerOnline : NetworkBehaviour
         meshRenderer.enabled = revealed;
 
         if (hud != null)
-            hud._fToggleInvisibilityUI(revealed);
+            hud._fToggleInvisibilityUI(revealed); // ✅ invertido en PlayerHUD
     }
 
     void ShootCooldown()
@@ -314,14 +378,12 @@ public class PlayerControllerOnline : NetworkBehaviour
             timeCooldown -= Time.deltaTime;
     }
 
-    // Llamado por PlayerHealthOnline (server) para otorgar kills
     public void AddScoreServer(int amount)
     {
         if (!IsServer) return;
         scoreNet.Value += Mathf.Max(0, amount);
     }
 
-    // Llamado por PlayerHealthOnline (ClientRpc) para blink
     public void StartDamageBlink()
     {
         if (blinkRoutine != null)

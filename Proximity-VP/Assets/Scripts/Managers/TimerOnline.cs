@@ -17,6 +17,10 @@ public class TimerOnline : NetworkBehaviour
     private NetworkVariable<bool> gameStartedNet = new NetworkVariable<bool>(
         false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
+    // ✅ Expuestos para el resto del juego
+    public float remainingTime => remainingTimeNet.Value;
+    public bool gameStarted => gameStartedNet.Value;
+
     public delegate void OnTryStartGame();
     public static OnTryStartGame onTryStartGame;
 
