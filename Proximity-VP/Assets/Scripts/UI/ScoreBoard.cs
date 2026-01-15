@@ -163,7 +163,7 @@ public class ScoreBoard : MonoBehaviour
 
             for (int i = 0; i < onlinePlayers.Count; i++)
             {
-                GameObject ban = Instantiate(i >= 3 ? scoreBanners[3] : scoreBanners[i]);
+                GameObject ban = Instantiate(i >= 2 ? scoreBanners[2] : scoreBanners[i]);
                 ban.transform.SetParent(scorePanel.transform, false);
 
                 string posStr = (i == 0) ? "1st" :
