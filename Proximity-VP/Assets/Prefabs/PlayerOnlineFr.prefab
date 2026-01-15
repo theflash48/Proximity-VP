@@ -1683,9 +1683,6 @@ MonoBehaviour:
     m_Bits: 1
   score: 0
   txtScore: {fileID: 8556673330956922803}
-  timeVisible: 1
-  timeToInvisible: 0
-  isVisible: 0
   playerCamera: {fileID: 8076518745375911800}
   cameraComponent: {fileID: 6877589753762229}
   groundCheck: {fileID: 8625145338881202856}
@@ -1694,6 +1691,9 @@ MonoBehaviour:
   lineRender: {fileID: 0}
   moveInput: {x: 0, y: 0}
   lookInput: {x: 0, y: 0}
+  isVisible: 0
+  timeVisible: 1
+  timeToInvisible: 0
   timeCooldownMax: 1
   timeCooldown: 0
 --- !u!114 &2219747137910009655
@@ -1783,6 +1783,9 @@ MonoBehaviour:
   _cHUD: {fileID: 420722015428507709}
   _cReloadBar: {fileID: 5615655285069701156}
   _cInvisibility: {fileID: 1183035673349082438}
+  _hudNormalColor: {r: 1, g: 1, b: 1, a: 1}
+  _hudDamagedColor: {r: 1, g: 0, b: 0, a: 1}
+  _cDeathScreen: {fileID: 0}
   _cName: {fileID: 2934727782387357726}
   _cPlace: {fileID: 3562915477688677305}
   _cScore: {fileID: 8556673330956922803}
@@ -1823,9 +1826,9 @@ MonoBehaviour:
   RotationInterpolationType: 2
   ScaleInterpolationType: 0
   PositionLerpSmoothing: 1
-  PositionMaxInterpolationTime: 0.1
+  PositionMaxInterpolationTime: 0.01
   RotationLerpSmoothing: 1
-  RotationMaxInterpolationTime: 0.1
+  RotationMaxInterpolationTime: 0.01
   ScaleLerpSmoothing: 1
   ScaleMaxInterpolationTime: 0.1
   AuthorityMode: 1

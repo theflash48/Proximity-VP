@@ -11,7 +11,7 @@ public class LoginManager : MonoBehaviour
     public Text messageText;
 
     [Header("PHP URLs")]
-    public string loginUrl    = "http://localhost/screencheat/login.php";
+    public string loginUrl = "http://localhost/screencheat/login.php";
     public string registerUrl = "http://localhost/screencheat/register.php";
 
     public void OnClickLogin()
@@ -42,18 +42,17 @@ public class LoginManager : MonoBehaviour
 
             var json = www.downloadHandler.text;
             LoginResponse resp = JsonUtility.FromJson<LoginResponse>(json);
+
             if (!resp.success)
             {
                 messageText.text = "Login incorrecto";
+                yield break;
             }
-            else
-            {
-                if (AccountSession.Instance != null)
-                {
-                    AccountSession.Instance.SetSession(resp.acc_id, resp.username);
-                }
-                SceneManager.LoadScene("MatchesMenu"); // tu escena de “Matches”
-            }
+
+            // ✅ Asegurar que existe y guardar sesión SIEMPRE
+            AccountSession.EnsureExists().SetSession(resp.acc_id, resp.username);
+
+            SceneManager.LoadScene("MatchesMenu");
         }
     }
 
