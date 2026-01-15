@@ -10,10 +10,16 @@ public class PlayerHealthOnline : NetworkBehaviour
     public NetworkVariable<int> currentLives = new NetworkVariable<int>(
         0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
+    // Muertes en esta partida (cada vez que llegas a 0)
+    private NetworkVariable<int> deathsNet = new NetworkVariable<int>(
+        0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
+    public int DeathsInMatch => deathsNet.Value;
+
     [Header("Respawn Settings")]
     public float respawnDelay = 3f;
 
-    public TimerOnline timer; // ✅ online usa TimerOnline
+    public TimerOnline timer;
 
     private NetworkVariable<bool> isRespawning = new NetworkVariable<bool>(
         false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
@@ -24,6 +30,7 @@ public class PlayerHealthOnline : NetworkBehaviour
     private Rigidbody rb;
     private PlayerHUD hud;
     private PlayerControllerOnline controller;
+    private PlayerIdentityOnline identity;
 
     void Awake()
     {
@@ -31,6 +38,7 @@ public class PlayerHealthOnline : NetworkBehaviour
         rb = GetComponent<Rigidbody>();
         hud = GetComponent<PlayerHUD>();
         controller = GetComponent<PlayerControllerOnline>();
+        identity = GetComponent<PlayerIdentityOnline>();
     }
 
     public override void OnNetworkSpawn()
@@ -41,19 +49,14 @@ public class PlayerHealthOnline : NetworkBehaviour
         if (IsServer)
         {
             currentLives.Value = maxLives;
+            deathsNet.Value = 0;
             isRespawning.Value = false;
         }
 
         currentLives.OnValueChanged += OnLivesChanged;
         isRespawning.OnValueChanged += OnRespawnChanged;
 
-        // ✅ Spawn: blanco + DeathScreen off
-        if (hud != null)
-        {
-            hud._fSetHudDamageState(false);
-            hud._fToggleDeathScreen(false);
-        }
-
+        // Estado inicial UI
         OnLivesChanged(0, currentLives.Value);
         OnRespawnChanged(false, isRespawning.Value);
     }
@@ -66,8 +69,7 @@ public class PlayerHealthOnline : NetworkBehaviour
 
     private bool IsMatchRunning()
     {
-        // Si no encontramos timer por cualquier motivo, no bloqueamos feedback visual
-        if (timer == null) return true;
+        if (timer == null) return false;
         return timer.gameStarted && timer.remainingTime > 0f;
     }
 
@@ -77,15 +79,11 @@ public class PlayerHealthOnline : NetworkBehaviour
         {
             hud._fHealthUI(current, maxLives);
 
-            // ✅ Solo “en marcha” (tiempo bajando). Si no, blanco.
-            if (!IsMatchRunning())
-            {
-                hud._fSetHudDamageState(false);
-            }
-            else
-            {
+            // HUD blanco al spawn/respawn; rojo desde el primer hit mientras la partida esté en marcha
+            if (IsMatchRunning())
                 hud._fSetHudDamageState(current < maxLives);
-            }
+            else
+                hud._fSetHudDamageState(false);
         }
     }
 
@@ -100,15 +98,9 @@ public class PlayerHealthOnline : NetworkBehaviour
             rb.angularVelocity = Vector3.zero;
         }
 
-        // ✅ DeathScreen ON mientras respawneas (muerto), OFF al volver
+        // DeathScreen ON durante respawn
         if (hud != null)
             hud._fToggleDeathScreen(current);
-    }
-
-    [ServerRpc(RequireOwnership = false)]
-    public void TakeDamageServerRpc(ulong shooterClientId)
-    {
-        ApplyDamageFromServer(shooterClientId);
     }
 
     public void ApplyDamageFromServer(ulong shooterClientId)
@@ -116,6 +108,7 @@ public class PlayerHealthOnline : NetworkBehaviour
         if (!IsServer) return;
         if (isRespawning.Value) return;
 
+        // Solo daño con partida en marcha
         if (timer != null)
         {
             if (!timer.gameStarted || timer.remainingTime <= 0f)
@@ -128,6 +121,17 @@ public class PlayerHealthOnline : NetworkBehaviour
 
         if (currentLives.Value <= 0)
         {
+            // Cuenta muerte de partida
+            deathsNet.Value++;
+
+            // ✅ registrar death en OnlineMatchManager (victima + posición)
+            if (OnlineMatchManager.Instance != null && OnlineMatchManager.Instance.IsServer)
+            {
+                int victimAcc = (identity != null) ? identity.AccId.Value : 0;
+                if (victimAcc > 0)
+                    OnlineMatchManager.Instance.ServerRecordDeath(victimAcc, transform.position);
+            }
+
             AwardKillServer(shooterClientId);
             StartCoroutine(RespawnCoroutineServer());
         }
@@ -192,5 +196,20 @@ public class PlayerHealthOnline : NetworkBehaviour
     {
         if (controller != null)
             controller.StartDamageBlink();
+    }
+
+    // Para rejoin/rematch (server)
+    public void SetDeathsServer(int newDeaths)
+    {
+        if (!IsServer) return;
+        deathsNet.Value = Mathf.Max(0, newDeaths);
+    }
+
+    public void ResetForRematchServer()
+    {
+        if (!IsServer) return;
+        currentLives.Value = maxLives;
+        deathsNet.Value = 0;
+        isRespawning.Value = false;
     }
 }

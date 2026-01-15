@@ -19,10 +19,11 @@ public class ScoreBoard : MonoBehaviour
 
     [Header("OPCIONAL: envío BD")]
     public GameResultUploader resultUploader;
-    public int currentMapId = 1;
 
     [Header("Mostrar Join Code")]
     [SerializeField] Text joinCodeDisplay;
+
+    private float refreshCd;
 
     void OnEnable()
     {
@@ -53,9 +54,26 @@ public class ScoreBoard : MonoBehaviour
         if (endScreen != null)
             endScreen.SetActive(false);
 
+        if (resultUploader == null)
+            resultUploader = FindFirstObjectByType<GameResultUploader>();
+
         var netUi = FindFirstObjectByType<NetworkUIManager>();
         if (netUi != null && joinCodeDisplay != null)
             joinCodeDisplay.text = "JoinCode: " + netUi.joinCode;
+
+        LocatePlayers();
+        UpdateScores();
+    }
+
+    void Update()
+    {
+        // refresco suave para que “place” no dependa solo de eventos
+        refreshCd -= Time.deltaTime;
+        if (refreshCd <= 0f)
+        {
+            refreshCd = 0.25f;
+            UpdateScores();
+        }
     }
 
     private bool IsOnlineSession()
@@ -68,25 +86,29 @@ public class ScoreBoard : MonoBehaviour
         localPlayers.Clear();
         onlinePlayers.Clear();
 
+        // 1) por tag (rápido)
         var players = GameObject.FindGameObjectsWithTag("Player");
-        if (players == null || players.Length == 0)
-            return;
-
         foreach (var p in players)
         {
             if (p == null) continue;
 
             var pcOnline = p.GetComponent<PlayerControllerOnline>();
-            if (pcOnline != null && pcOnline.enabled)
-            {
-                onlinePlayers.Add(pcOnline);
-                continue;
-            }
+            if (pcOnline != null) { onlinePlayers.Add(pcOnline); continue; }
 
             var pcLocal = p.GetComponent<PlayerControllerLocal>();
-            if (pcLocal != null && pcLocal.enabled)
+            if (pcLocal != null) localPlayers.Add(pcLocal);
+        }
+
+        // 2) fallback: por ConnectedClients (más robusto en online)
+        if (IsOnlineSession() && onlinePlayers.Count == 0)
+        {
+            foreach (var kv in NetworkManager.Singleton.ConnectedClients)
             {
-                localPlayers.Add(pcLocal);
+                if (kv.Value?.PlayerObject == null) continue;
+                var go = kv.Value.PlayerObject.gameObject;
+                var pcOnline = go.GetComponent<PlayerControllerOnline>();
+                if (pcOnline != null && !onlinePlayers.Contains(pcOnline))
+                    onlinePlayers.Add(pcOnline);
             }
         }
     }
@@ -105,6 +127,13 @@ public class ScoreBoard : MonoBehaviour
         }
     }
 
+    private int SlotIndexOf(PlayerControllerOnline p)
+    {
+        var id = p != null ? p.GetComponent<PlayerIdentityOnline>() : null;
+        if (id == null) return 999;
+        return id.SlotIndex.Value < 0 ? 999 : id.SlotIndex.Value;
+    }
+
     void UpdateScores()
     {
         if (localPlayers.Count == 0 && onlinePlayers.Count == 0)
@@ -114,9 +143,15 @@ public class ScoreBoard : MonoBehaviour
 
         if (online && onlinePlayers.Count > 0)
         {
-            onlinePlayers = onlinePlayers.Where(p => p != null).OrderByDescending(p => p.score).ToList();
+            onlinePlayers = onlinePlayers
+                .Where(p => p != null)
+                .OrderByDescending(p => p.score)
+                .ThenBy(p => SlotIndexOf(p))
+                .ToList();
+
             for (int i = 0; i < onlinePlayers.Count; i++)
                 SetPlace(onlinePlayers[i].GetComponent<PlayerHUD>(), i);
+
             return;
         }
 
@@ -134,8 +169,19 @@ public class ScoreBoard : MonoBehaviour
         if (id != null && id.Username.Value.Length > 0)
             return id.Username.Value.ToString();
 
-        // fallback
         return "Player";
+    }
+
+    private int DetectMapIdFromScene()
+    {
+        var roots = SceneManager.GetActiveScene().GetRootGameObjects();
+        for (int i = 0; i < roots.Length; i++)
+        {
+            if (roots[i] == null) continue;
+            if (roots[i].name == "DebugMap") return 1;
+            if (roots[i].name == "Nuketown") return 2;
+        }
+        return 1;
     }
 
     public void PrintScores()
@@ -159,11 +205,10 @@ public class ScoreBoard : MonoBehaviour
 
         if (online && onlinePlayers.Count > 0)
         {
-            onlinePlayers = onlinePlayers.Where(p => p != null).OrderByDescending(p => p.score).ToList();
-
             for (int i = 0; i < onlinePlayers.Count; i++)
             {
-                GameObject ban = Instantiate(i >= 2 ? scoreBanners[2] : scoreBanners[i]);
+                int idx = Mathf.Clamp(i, 0, scoreBanners.Length - 1);
+                GameObject ban = Instantiate(scoreBanners[idx]);
                 ban.transform.SetParent(scorePanel.transform, false);
 
                 string posStr = (i == 0) ? "1st" :
@@ -181,11 +226,10 @@ public class ScoreBoard : MonoBehaviour
         }
         else if (!online && localPlayers.Count > 0)
         {
-            localPlayers = localPlayers.Where(p => p != null).OrderByDescending(p => p.score).ToList();
-
             for (int i = 0; i < localPlayers.Count; i++)
             {
-                GameObject ban = Instantiate(i >= 3 ? scoreBanners[3] : scoreBanners[i]);
+                int idx = Mathf.Clamp(i, 0, scoreBanners.Length - 1);
+                GameObject ban = Instantiate(scoreBanners[idx]);
                 ban.transform.SetParent(scorePanel.transform, false);
 
                 string posStr = (i == 0) ? "1st" :
@@ -215,14 +259,19 @@ public class ScoreBoard : MonoBehaviour
 
     IEnumerator SendResultsCoroutineHostOnly()
     {
-        // GameId
+        if (resultUploader == null) yield break;
+
+        // Crear game_id si hace falta
         if (resultUploader.CurrentGameId <= 0)
         {
             int totalPlayers = onlinePlayers.Count;
-            yield return resultUploader.StartGameOnServer(totalPlayers, currentMapId);
+            int mapId = DetectMapIdFromScene();
+            yield return resultUploader.StartGameOnServer(totalPlayers, mapId);
         }
 
-        // Winner por score
+        if (resultUploader.CurrentGameId <= 0)
+            yield break;
+
         int winnerAccId = 0;
         int bestScore = int.MinValue;
 
@@ -243,7 +292,8 @@ public class ScoreBoard : MonoBehaviour
 
             int isHost = 0;
             var no = p.GetComponent<NetworkObject>();
-            if (no != null && no.OwnerClientId == 0) isHost = 1;
+            if (no != null && NetworkManager.Singleton != null && no.OwnerClientId == NetworkManager.ServerClientId)
+                isHost = 1;
 
             players.Add(new GameResultUploader.PlayerResult
             {
@@ -259,23 +309,32 @@ public class ScoreBoard : MonoBehaviour
 
     public void ReloadScene()
     {
-        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
-            NetworkManager.Singleton.Shutdown();
-
-        Cursor.lockState = CursorLockMode.None;
-        Cursor.visible = true;
-
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        StartCoroutine(ShutdownAndLoad(SceneManager.GetActiveScene().name, clearSession: false));
     }
 
     public void BackToMain()
     {
-        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
-            NetworkManager.Singleton.Shutdown();
+        // Tu botón Next llama aquí
+        StartCoroutine(ShutdownAndLoad("MainMenu", clearSession: true));
+    }
 
+    private IEnumerator ShutdownAndLoad(string sceneName, bool clearSession)
+    {
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
 
-        SceneManager.LoadScene("MainMenu");
+        // IMPORTANTÍSIMO: limpiar statics del online para poder crear/entrar en otra sala
+        PlayerIdentityOnline.ResetStaticState();
+
+        if (clearSession && AccountSession.Instance != null)
+            AccountSession.Instance.ClearSession();
+
+        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+        {
+            NetworkManager.Singleton.Shutdown();
+            yield return null; // 1 frame para que se asiente
+        }
+
+        SceneManager.LoadScene(sceneName);
     }
 }

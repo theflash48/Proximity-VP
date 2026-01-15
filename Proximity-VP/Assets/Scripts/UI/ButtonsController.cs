@@ -8,6 +8,9 @@ public class ButtonsController : MonoBehaviour
     {
         Time.timeScale = 1f;
 
+        // ✅ limpiar estado pegado
+        PlayerIdentityOnline.ResetStaticState();
+
         if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
             NetworkManager.Singleton.Shutdown();
 
@@ -17,14 +20,11 @@ public class ButtonsController : MonoBehaviour
         SceneManager.LoadScene("MainMenu");
     }
 
-    public void GoToMainMenu(string _)
-    {
-        GoToMainMenu();
-    }
-
     public void Restart()
     {
         Time.timeScale = 1f;
+
+        PlayerIdentityOnline.ResetStaticState();
 
         if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
             NetworkManager.Singleton.Shutdown();

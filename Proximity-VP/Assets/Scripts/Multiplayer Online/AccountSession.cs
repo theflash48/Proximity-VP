@@ -7,24 +7,6 @@ public class AccountSession : MonoBehaviour
     public int AccId { get; private set; }
     public string Username { get; private set; }
 
-    // ✅ Crea una instancia siempre, aunque nadie haya puesto el componente en una escena
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-    private static void Bootstrap()
-    {
-        EnsureExists();
-    }
-
-    public static AccountSession EnsureExists()
-    {
-        // Unity: Instance puede “parecer” null si el objeto fue destruido
-        if (Instance != null)
-            return Instance;
-
-        var go = new GameObject("AccountSession");
-        Instance = go.AddComponent<AccountSession>();
-        return Instance;
-    }
-
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -37,10 +19,31 @@ public class AccountSession : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
+    /// <summary>
+    /// Garantiza que exista un AccountSession en runtime.
+    /// Útil porque en tu proyecto a veces no está en ninguna jerarquía.
+    /// </summary>
+    public static AccountSession EnsureExists()
+    {
+        if (Instance != null) return Instance;
+
+        var existing = FindFirstObjectByType<AccountSession>();
+        if (existing != null)
+        {
+            Instance = existing;
+            DontDestroyOnLoad(existing.gameObject);
+            return Instance;
+        }
+
+        var go = new GameObject("AccountSession");
+        Instance = go.AddComponent<AccountSession>();
+        return Instance;
+    }
+
     public void SetSession(int accId, string username)
     {
         AccId = accId;
-        Username = username;
+        Username = username ?? "";
     }
 
     public void ClearSession()

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class SpawnManager : MonoBehaviour
 {
@@ -102,6 +103,62 @@ public class SpawnManager : MonoBehaviour
         if (activePlayers.Contains(player))
             activePlayers.Remove(player);
         ApplyBlackState();
+    }
+
+    // ==============================
+    // Compatibilidad: métodos esperados por otros scripts
+    // ==============================
+
+    public void AutoDiscoverSpawnPoints()
+    {
+        AutoDiscoverSpawnPoints(null);
+    }
+
+    public void AutoDiscoverSpawnPoints(GameObject mapRoot)
+    {
+        Transform spawnsRoot = null;
+
+        if (mapRoot != null)
+            spawnsRoot = mapRoot.transform.Find("Spawns");
+
+        if (spawnsRoot == null)
+        {
+            // 1) busca "Spawns" bajo los roots de la escena
+            var roots = SceneManager.GetActiveScene().GetRootGameObjects();
+            for (int i = 0; i < roots.Length && spawnsRoot == null; i++)
+            {
+                var t = roots[i].transform.Find("Spawns");
+                if (t != null) spawnsRoot = t;
+            }
+        }
+
+        if (spawnsRoot == null)
+        {
+            // 2) fallback: busca cualquier transform llamado "Spawns"
+            var all = FindObjectsByType<Transform>(FindObjectsSortMode.None);
+            for (int i = 0; i < all.Length; i++)
+            {
+                if (all[i] != null && all[i].name == "Spawns")
+                {
+                    spawnsRoot = all[i];
+                    break;
+                }
+            }
+        }
+
+        if (spawnsRoot == null)
+        {
+            Debug.LogWarning("SpawnManager: No se encontró 'Spawns' para autodetectar spawnPoints.");
+            return;
+        }
+
+        var list = new List<Transform>();
+        foreach (Transform child in spawnsRoot)
+            if (child != null) list.Add(child);
+
+        // Orden estable por nombre (Spawn-1, Spawn-2, ...)
+        list.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
+        spawnPoints = list.ToArray();
     }
 
     public Transform GetFarthestSpawnPoint(GameObject playerToSpawn)

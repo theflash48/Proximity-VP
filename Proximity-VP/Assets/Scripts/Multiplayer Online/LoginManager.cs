@@ -11,8 +11,14 @@ public class LoginManager : MonoBehaviour
     public Text messageText;
 
     [Header("PHP URLs")]
-    public string loginUrl = "http://localhost/screencheat/login.php";
-    public string registerUrl = "http://localhost/screencheat/register.php";
+    public string loginUrl    = "http://proximityvp.alwaysdata.net/screencheat/login.php";
+    public string registerUrl = "http://proximityvp.alwaysdata.net/screencheat/register.php";
+
+    private void Awake()
+    {
+        // Clave: que exista SIEMPRE antes de intentar hostear/join
+        AccountSession.EnsureExists();
+    }
 
     public void OnClickLogin()
     {
@@ -26,6 +32,8 @@ public class LoginManager : MonoBehaviour
 
     IEnumerator LoginCoroutine()
     {
+        messageText.text = "";
+
         WWWForm form = new WWWForm();
         form.AddField("username", usernameInput.text);
         form.AddField("password", passwordInput.text);
@@ -43,14 +51,15 @@ public class LoginManager : MonoBehaviour
             var json = www.downloadHandler.text;
             LoginResponse resp = JsonUtility.FromJson<LoginResponse>(json);
 
-            if (!resp.success)
+            if (resp == null || !resp.success)
             {
                 messageText.text = "Login incorrecto";
                 yield break;
             }
 
-            // ✅ Asegurar que existe y guardar sesión SIEMPRE
+            // ✅ Guardar sesión siempre
             AccountSession.EnsureExists().SetSession(resp.acc_id, resp.username);
+            Debug.Log($"LOGIN OK -> acc_id={resp.acc_id} user={resp.username}");
 
             SceneManager.LoadScene("MatchesMenu");
         }
@@ -58,6 +67,8 @@ public class LoginManager : MonoBehaviour
 
     IEnumerator RegisterCoroutine()
     {
+        messageText.text = "";
+
         WWWForm form = new WWWForm();
         form.AddField("username", usernameInput.text);
         form.AddField("password", passwordInput.text);

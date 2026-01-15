@@ -42,6 +42,9 @@ public class PlayerControllerOnline : NetworkBehaviour
     private PlayerInput playerInput;
     private PlayerHUD hud;
     private PlayerHealthOnline health;
+    private PlayerIdentityOnline identity;
+
+    private TimerOnline timerOnline;
 
     private float xRotation = 0f;
     private float yRotation = 0f;
@@ -52,6 +55,7 @@ public class PlayerControllerOnline : NetworkBehaviour
     private bool blinkActive;
     private Coroutine blinkRoutine;
 
+    // Cursor control (owner only)
     private bool allowCursorLock = true;
 
     private NetworkVariable<int> scoreNet = new NetworkVariable<int>(
@@ -82,6 +86,7 @@ public class PlayerControllerOnline : NetworkBehaviour
         playerInput = GetComponent<PlayerInput>();
         hud = GetComponent<PlayerHUD>();
         health = GetComponent<PlayerHealthOnline>();
+        identity = GetComponent<PlayerIdentityOnline>();
 
         if (meshRenderer != null)
             meshRenderer.enabled = false;
@@ -108,6 +113,8 @@ public class PlayerControllerOnline : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
+        timerOnline = FindFirstObjectByType<TimerOnline>();
+
         if (playerInput != null)
             playerInput.enabled = IsOwner;
 
@@ -132,10 +139,6 @@ public class PlayerControllerOnline : NetworkBehaviour
         score = scoreNet.Value;
         if (hud != null)
             hud._fUpdateScore(score);
-
-        // asegurar DeathScreen OFF al entrar
-        if (hud != null)
-            hud._fToggleDeathScreen(false);
 
         scoreNet.OnValueChanged += OnScoreChanged;
     }
@@ -174,6 +177,7 @@ public class PlayerControllerOnline : NetworkBehaviour
     private void OnGameStart()
     {
         if (!IsOwner) return;
+
         allowCursorLock = true;
         ApplyCursorControl(true);
     }
@@ -181,6 +185,7 @@ public class PlayerControllerOnline : NetworkBehaviour
     private void OnGameEnd()
     {
         if (!IsOwner) return;
+
         allowCursorLock = false;
         ApplyCursorControl(false);
     }
@@ -203,10 +208,7 @@ public class PlayerControllerOnline : NetworkBehaviour
         onScoreUPOnline?.Invoke();
     }
 
-    public void OnMove(InputValue value)
-    {
-        moveInput = value.Get<Vector2>();
-    }
+    public void OnMove(InputValue value) => moveInput = value.Get<Vector2>();
 
     public void OnLook(InputValue value)
     {
@@ -222,7 +224,6 @@ public class PlayerControllerOnline : NetworkBehaviour
     {
         if (!IsOwner) return;
         if (timeCooldown > 0f) return;
-
         if (playerCamera == null) return;
 
         if (shootScript != null)
@@ -356,7 +357,7 @@ public class PlayerControllerOnline : NetworkBehaviour
         if (health != null && health.IsRespawning)
         {
             meshRenderer.enabled = false;
-            if (hud != null) hud._fToggleInvisibilityUI(false); // ✅ PlayerHUD lo invierte internamente
+            if (hud != null) hud._fToggleInvisibilityUI(false);
             return;
         }
 
@@ -369,7 +370,7 @@ public class PlayerControllerOnline : NetworkBehaviour
         meshRenderer.enabled = revealed;
 
         if (hud != null)
-            hud._fToggleInvisibilityUI(revealed); // ✅ invertido en PlayerHUD
+            hud._fToggleInvisibilityUI(revealed);
     }
 
     void ShootCooldown()
@@ -378,12 +379,55 @@ public class PlayerControllerOnline : NetworkBehaviour
             timeCooldown -= Time.deltaTime;
     }
 
+    // ✅ Server: sumar kills (solo cuando hay KO)
     public void AddScoreServer(int amount)
     {
         if (!IsServer) return;
-        scoreNet.Value += Mathf.Max(0, amount);
+
+        int add = Mathf.Max(0, amount);
+        if (add == 0) return;
+
+        scoreNet.Value += add;
+
+        // ✅ Tie-break: registrar “tiempo restante cuando alcanzó este nº de kills”
+        if (OnlineMatchManager.Instance != null && OnlineMatchManager.Instance.IsServer)
+        {
+            if (timerOnline == null) timerOnline = FindFirstObjectByType<TimerOnline>();
+            float tRem = (timerOnline != null) ? timerOnline.remainingTime : 0f;
+
+            int accId = (identity != null) ? identity.AccId.Value : 0;
+            if (accId > 0)
+                OnlineMatchManager.Instance.ServerRecordKill(accId, scoreNet.Value, tRem);
+        }
     }
 
+    // ✅ Server: setear kills exactos (rejoin/rematch)
+    public void SetScoreServer(int newScore)
+    {
+        if (!IsServer) return;
+        scoreNet.Value = Mathf.Max(0, newScore);
+    }
+
+    // ✅ Server: reset mínimo para rematch
+    public void ResetForRematchServer()
+    {
+        if (!IsServer) return;
+
+        scoreNet.Value = 0;
+        revealUntil.Value = 0d;
+    }
+
+    public void ResetForRematchClient()
+    {
+        timeCooldown = 0f;
+        moveInput = Vector2.zero;
+        lookInput = Vector2.zero;
+
+        if (lineRender != null)
+            lineRender.enabled = false;
+    }
+
+    // Blink daño (client)
     public void StartDamageBlink()
     {
         if (blinkRoutine != null)

@@ -19,11 +19,36 @@ public class PlayerIdentityOnline : NetworkBehaviour
     private static readonly Dictionary<int, ulong> _accToClient = new Dictionary<int, ulong>();
     private static readonly Dictionary<int, int> _accToSlot = new Dictionary<int, int>();
     private static readonly HashSet<int> _usedSlots = new HashSet<int>();
+    private static readonly HashSet<ulong> _verifiedClients = new HashSet<ulong>();
+
+    public static void ResetStaticState()
+    {
+        if (NetworkManager.Singleton != null)
+            NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnectedServer;
+
+        _serverHooks = false;
+        _accToClient.Clear();
+        _accToSlot.Clear();
+        _usedSlots.Clear();
+        _verifiedClients.Clear();
+    }
+
+    public static bool ServerAllConnectedVerified()
+    {
+        if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer)
+            return false;
+
+        foreach (ulong cid in NetworkManager.Singleton.ConnectedClientsIds)
+        {
+            if (!_verifiedClients.Contains(cid))
+                return false;
+        }
+        return true;
+    }
 
     public override void OnNetworkSpawn()
     {
         Username.OnValueChanged += OnUsernameChanged;
-        SlotIndex.OnValueChanged += (_, __) => ForceCameraReassign();
 
         if (IsServer)
             EnsureServerHooks();
@@ -36,10 +61,7 @@ public class PlayerIdentityOnline : NetworkBehaviour
                 return;
             }
 
-            int accId = AccountSession.Instance.AccId;
-            string username = AccountSession.Instance.Username;
-
-            SubmitIdentityServerRpc(accId, username);
+            SubmitIdentityServerRpc(AccountSession.Instance.AccId, AccountSession.Instance.Username);
         }
 
         ApplyNameToHud();
@@ -50,24 +72,16 @@ public class PlayerIdentityOnline : NetworkBehaviour
         Username.OnValueChanged -= OnUsernameChanged;
 
         if (IsServer)
-        {
-            int acc = AccId.Value;
-            if (acc > 0)
-            {
-                if (_accToClient.TryGetValue(acc, out ulong cid) && cid == OwnerClientId)
-                    _accToClient.Remove(acc);
-
-                int slot = SlotIndex.Value;
-                if (slot >= 0)
-                    _usedSlots.Remove(slot);
-            }
-        }
+            CleanupServerForClient(OwnerClientId, AccId.Value, SlotIndex.Value);
     }
 
     private void OnUsernameChanged(FixedString64Bytes prev, FixedString64Bytes curr)
     {
         ApplyNameToHud();
-        ForceCameraReassign();
+
+        var assigner = FindFirstObjectByType<OnlineSplitScreenCameraAssigner>();
+        if (assigner != null)
+            assigner.AssignAllCameras();
     }
 
     private void ApplyNameToHud()
@@ -85,26 +99,47 @@ public class PlayerIdentityOnline : NetworkBehaviour
         _serverHooks = true;
 
         if (NetworkManager.Singleton == null) return;
+        NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnectedServer;
+    }
 
-        NetworkManager.Singleton.OnClientDisconnectCallback += (clientId) =>
+    private static void OnClientDisconnectedServer(ulong clientId)
+    {
+        _verifiedClients.Remove(clientId);
+
+        // liberar mappings de esa cuenta/slot
+        List<int> toRemove = null;
+        foreach (var kv in _accToClient)
         {
-            List<int> toRemove = null;
-
-            foreach (var kv in _accToClient)
+            if (kv.Value == clientId)
             {
-                if (kv.Value == clientId)
-                {
-                    toRemove ??= new List<int>();
-                    toRemove.Add(kv.Key);
-                }
+                toRemove ??= new List<int>();
+                toRemove.Add(kv.Key);
             }
+        }
 
-            if (toRemove != null)
+        if (toRemove != null)
+        {
+            foreach (int acc in toRemove)
             {
-                foreach (int acc in toRemove)
-                    _accToClient.Remove(acc);
+                _accToClient.Remove(acc);
+                if (_accToSlot.TryGetValue(acc, out int slot))
+                    _usedSlots.Remove(slot);
             }
-        };
+        }
+    }
+
+    private static void CleanupServerForClient(ulong clientId, int accId, int slotIndex)
+    {
+        _verifiedClients.Remove(clientId);
+
+        if (accId > 0)
+        {
+            if (_accToClient.TryGetValue(accId, out ulong cid) && cid == clientId)
+                _accToClient.Remove(accId);
+        }
+
+        if (slotIndex >= 0)
+            _usedSlots.Remove(slotIndex);
     }
 
     [ServerRpc(RequireOwnership = false)]
@@ -146,6 +181,8 @@ public class PlayerIdentityOnline : NetworkBehaviour
         AccId.Value = accId;
         Username.Value = new FixedString64Bytes(username);
         SlotIndex.Value = slot;
+
+        _verifiedClients.Add(senderClientId);
     }
 
     private int FindFirstFreeSlot()
@@ -178,12 +215,5 @@ public class PlayerIdentityOnline : NetworkBehaviour
 
         if (NetworkManager.Singleton != null)
             NetworkManager.Singleton.Shutdown();
-    }
-
-    private void ForceCameraReassign()
-    {
-        var assigner = FindFirstObjectByType<OnlineSplitScreenCameraAssigner>();
-        if (assigner != null)
-            assigner.AssignAllCameras();
     }
 }

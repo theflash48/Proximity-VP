@@ -198,11 +198,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2951652}
   m_CullTransparentMesh: 1
---- !u!4 &71727586 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 8169888762350173908, guid: 82ae39aa28139ad499ce6bf455d58b33, type: 3}
-  m_PrefabInstance: {fileID: 1734436083}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &85905456
 GameObject:
   m_ObjectHideFlags: 0
@@ -218,6 +213,8 @@ GameObject:
   - component: {fileID: 85905461}
   - component: {fileID: 85905462}
   - component: {fileID: 85905464}
+  - component: {fileID: 85905466}
+  - component: {fileID: 85905465}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -328,8 +325,7 @@ MonoBehaviour:
   - {fileID: 1355860171742360213, guid: 40296509c46958f4cb2623ef643154d4, type: 3}
   - {fileID: 6047345068705834272, guid: 5bd944072380cae4db699f52423052f4, type: 3}
   scorePanel: {fileID: 1913609534}
-  resultUploader: {fileID: 0}
-  currentMapId: 1
+  resultUploader: {fileID: 85905465}
   joinCodeDisplay: {fileID: 1761826912}
 --- !u!114 &85905463
 MonoBehaviour:
@@ -372,6 +368,43 @@ MonoBehaviour:
   timerText: {fileID: 1795279700}
   startingTime: 60
   uiCanvas: {fileID: 663392480}
+  minPlayers: 2
+  maxPlayers: 4
+--- !u!114 &85905465
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 85905456}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbfbccebc2d95fa45987b7da336fc360, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  startGameUrl: http://proximityvp.alwaysdata.net/screencheat/start_game.php
+  endGameUrl: http://proximityvp.alwaysdata.net/screencheat/end_game.php
+--- !u!114 &85905466
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 85905456}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7df6530ae4ac91c4798c601145a2d3d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
+  maps:
+  - mapId: 0
+    mapPrefab: {fileID: 2714189516597900638, guid: 82ae39aa28139ad499ce6bf455d58b33, type: 3}
+  - mapId: 0
+    mapPrefab: {fileID: 8461032844065805975, guid: c2ce8960aa512c14ebd0eabd49b8d8de, type: 3}
+  expectedPlayers: 4
+  resultUploader: {fileID: 85905465}
+  timerOnline: {fileID: 85905464}
 --- !u!1 &334581744
 GameObject:
   m_ObjectHideFlags: 0
@@ -747,11 +780,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 480716173}
   m_CullTransparentMesh: 1
---- !u!4 &566582543 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 2383607196921732406, guid: 82ae39aa28139ad499ce6bf455d58b33, type: 3}
-  m_PrefabInstance: {fileID: 1734436083}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &574531985
 GameObject:
   m_ObjectHideFlags: 0
@@ -786,11 +814,11 @@ MonoBehaviour:
   blackScreen: {fileID: 1578405904}
   blackCamera: {fileID: 1724686079}
   spawnPoints:
-  - {fileID: 1029586063}
-  - {fileID: 566582543}
-  - {fileID: 71727586}
-  - {fileID: 1063790062}
-  - {fileID: 652774079}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
   activePlayers: []
   autoDiscoverOnlinePlayers: 1
   discoverInterval: 0.5
@@ -848,11 +876,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
   playerPrefab: {fileID: 8661943651431110249, guid: 8b15cafd1835e214199f0759a4ef1386, type: 3}
---- !u!4 &652774079 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 4896314595283866402, guid: 82ae39aa28139ad499ce6bf455d58b33, type: 3}
-  m_PrefabInstance: {fileID: 1734436083}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &663392480
 GameObject:
   m_ObjectHideFlags: 0
@@ -1253,7 +1276,6 @@ MonoBehaviour:
   - {fileID: 8400000, guid: 7f5a99bcb25eef142b8616a8fb619b1f, type: 2}
   - {fileID: 8400000, guid: 71153e53e6280a0499e1942767825b03, type: 2}
   - {fileID: 8400000, guid: d01997380d1cb994aaa6b9f1598c10a8, type: 2}
-  refreshInterval: 0.25
 --- !u!4 &904416858
 Transform:
   m_ObjectHideFlags: 0
@@ -1391,16 +1413,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 975641700}
   m_CullTransparentMesh: 1
---- !u!4 &1029586063 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 3647939798248784771, guid: 82ae39aa28139ad499ce6bf455d58b33, type: 3}
-  m_PrefabInstance: {fileID: 1734436083}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &1063790062 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 2119788719285809807, guid: 82ae39aa28139ad499ce6bf455d58b33, type: 3}
-  m_PrefabInstance: {fileID: 1734436083}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1095828989
 GameObject:
   m_ObjectHideFlags: 0
@@ -1883,7 +1895,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1408137840
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1988,7 +2000,7 @@ GameObject:
   - component: {fileID: 1432795397}
   - component: {fileID: 1432795396}
   m_Layer: 5
-  m_Name: Quit
+  m_Name: Next
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2595,63 +2607,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1001 &1734436083
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 2714189516597900638, guid: 82ae39aa28139ad499ce6bf455d58b33, type: 3}
-      propertyPath: m_Name
-      value: DebugMap
-      objectReference: {fileID: 0}
-    - target: {fileID: 7603298707453215099, guid: 82ae39aa28139ad499ce6bf455d58b33, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: -6.5153704
-      objectReference: {fileID: 0}
-    - target: {fileID: 7603298707453215099, guid: 82ae39aa28139ad499ce6bf455d58b33, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: -7.766183
-      objectReference: {fileID: 0}
-    - target: {fileID: 7603298707453215099, guid: 82ae39aa28139ad499ce6bf455d58b33, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 11.850961
-      objectReference: {fileID: 0}
-    - target: {fileID: 7603298707453215099, guid: 82ae39aa28139ad499ce6bf455d58b33, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 7603298707453215099, guid: 82ae39aa28139ad499ce6bf455d58b33, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7603298707453215099, guid: 82ae39aa28139ad499ce6bf455d58b33, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7603298707453215099, guid: 82ae39aa28139ad499ce6bf455d58b33, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7603298707453215099, guid: 82ae39aa28139ad499ce6bf455d58b33, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7603298707453215099, guid: 82ae39aa28139ad499ce6bf455d58b33, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7603298707453215099, guid: 82ae39aa28139ad499ce6bf455d58b33, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 82ae39aa28139ad499ce6bf455d58b33, type: 3}
 --- !u!1 &1735529586
 GameObject:
   m_ObjectHideFlags: 0
@@ -3376,8 +3331,7 @@ SceneRoots:
   - {fileID: 85905458}
   - {fileID: 574531987}
   - {fileID: 848842403}
-  - {fileID: 1734436083}
-  - {fileID: 2112641719}
   - {fileID: 1901364267}
-  - {fileID: 1775225719}
+  - {fileID: 2112641719}
   - {fileID: 904416858}
+  - {fileID: 1775225719}
